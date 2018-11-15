@@ -1,0 +1,113 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+nodes=2
+ncpus=24
+mpiprocs=$ncpus
+test=102_imb_impi_${nodes}node
+failmetric=900
+
+# default to run on any hosts
+pbsname="$test"
+rnode="ncpus=${ncpus}:mpiprocs=${mpiprocs}:ompthreads=1${SELECT_GPU}:mem=96gb"
+resources="select=${nodes}:${rnode}"
+# run on host specified on command line
+((nodes_minus1=nodes-1))
+if [ $# -eq 1 ] ; then resources="select=host=${1}:${rnode}+${nodes_minus1}:${rnode}" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="select=host=${1}:${rnode}+host=${2}:${rnode}" ; pbsname="${test}_${1}_${2}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=/scratch/adm/sup/fsg3/benchmarks/workload/$test.\$PBS_JOBID
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l $resources
+#PBS -l walltime=0:30:00
+#PBS -j oe
+#PBS -P 90000001
+
+nodes=$nodes
+ppn=$mpiprocs
+((total=nodes*ppn))
+
+set -e
+
+cd "\$PBS_O_WORKDIR" || exit \$?
+
+# serialized, not ideal
+n=0
+while [ \$n -lt \$total ] ; do
+ # preparation
+ pbsdsh -n \$n hostname
+ pbsdsh -n \$n sync
+ pbsdsh -n \$n /app/nsccadmin/bin/drop_caches
+ # TODO: redirection of stdout does not work with pbsdsh
+ pbsdsh -n \$n memhog 64gb > /dev/null 2>&1
+ # node check
+ echo == stream start
+ pbsdsh -n \$n /app/benchmarks/stream/bin/stream-wrapper
+ echo == stream pass 2
+ pbsdsh -n \$n /app/benchmarks/stream/bin/stream-wrapper
+ echo == stream end
+ n=\`expr \$n + $mpiprocs\`
+done
+
+# echo warm up
+module load intelmpi
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == warmup start
+mpirun -genv I_MPI_DEBUG 8 IMB-MPI1 -msglog 10
+echo == warmup end
+
+# start timing
+start=\`date +%s\`
+
+# production runs
+for i in {01..03} ; do
+ echo run \$i
+ mpirun IMB-MPI1 > IMB-MPI1.\${nodes}x\${ppn}.\$PBS_JOBID.\$i 2>&1
+done
+
+end=\`date +%s\`
+((metric=end-start))
+
+echo check for correctness
+# temporary, fix with checks of specific collectives and message sizes later
+for i in {01..03} ; do
+ echo check \$i
+ grep "All processes entering MPI_Finalize" IMB-MPI1.\${nodes}x\${ppn}.\$PBS_JOBID.\$i || { echo FAIL ; exit 1 ; }
+done
+
+echo check time within allowable limit
+failmetric=$failmetric
+echo failmetric=\"\$failmetric\"
+echo metric=\"\$metric\"
+if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
+
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

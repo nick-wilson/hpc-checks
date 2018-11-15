@@ -1,0 +1,135 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=028_gpfs_taskset
+dtest=020_gpfs
+#failmetric=125
+failmetric=450
+ibtarget=nscc04
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$dtest"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:mem=96gb
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+
+echo pre-run diagnostics
+/app/nsccadmin/bin/gpfs_waiters
+echo
+echo =======================
+for h in {nscc,nus,ntu}{01..04}-ib0 ; do ssh -o ConnectTimeout=5 \$h ps -eo comm \| egrep \'\(du\|find\|rsync\|scp\|sftp\)\' \| sed -e s/^/login_commands:\${h}:/ ; done
+echo == env ================
+env
+echo == ulimit =============
+ulimit -a
+echo == uptime =============
+uptime
+### echo == ib_read_bw =============
+### ibtarget=$ibtarget
+### ssh -o ConnectTimeout=5 \$ibtarget killall ib_read_bw > /dev/null 2>&1 < /dev/null
+### ssh -o ConnectTimeout=5 \$ibtarget ib_read_bw > /dev/null 2>&1 < /dev/null &
+### sleep 1
+### ib_read_bw \$ibtarget
+### ssh -o ConnectTimeout=5 \$ibtarget killall ib_read_bw > /dev/null 2>&1 < /dev/null
+echo =======================
+
+set -e
+
+# bind all processes to first CPU
+taskset -p 0x00000001 \$\$
+
+start=\`date +%s\`
+
+cd "\$PBS_O_WORKDIR"
+mkdir $tmp
+cd $tmp
+
+echo touch and rm 100 files
+time touch {000..100}
+time rm {000..100}
+echo touch and rm 1000 files
+time touch {0000..1000}
+time rm {0000..1000}
+echo touch and rm 10000 files
+time touch {00000..10000}
+time rm {00000..10000}
+
+echo mkdir and rmdir 100 directories
+time mkdir {000..100}
+time rmdir {000..100}
+echo mkdir and rmdir 1000 directories
+time mkdir {0000..1000}
+time rmdir {0000..1000}
+echo mkdir and rmdir 10000 directories
+time mkdir {00000..10000}
+time rmdir {00000..10000}
+
+for i in {1..9} ; do
+ echo unpack $i
+ time tar zxf "$datadir/dir\$i.tgz"
+done
+
+echo find
+time find * > /dev/null
+
+echo cp
+time mkdir cp
+time cp -a dir? cp/
+
+echo grep
+time grep -r some_random_string > /dev/null || true
+
+for i in {1..9} ; do
+ echo delete dir\$i
+ time rm -rf dir\$i
+done
+echo delete cp
+time rm -rf cp
+
+cd ..
+echo rmdir $tmp
+time rmdir $tmp
+
+end=\`date +%s\`
+((metric=end-start))
+echo start diagnostics after \$metric seconds
+set +e
+/app/nsccadmin/bin/gpfs_waiters
+echo
+echo =======================
+### for h in {nscc,nus,ntu}{01..04}-ib0 ; do ssh -o ConnectTimeout=5 \$h ps -eo comm \| egrep \'\(du\|find\|rsync\|scp\|sftp\)\' \| sed -e s/^/login_commands:\${h}:/ ; done
+echo metric=\"\$metric\"
+if [ \$metric -gt $failmetric ] ; then echo FAIL ; exit 1 ; fi
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

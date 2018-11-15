@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=080_qe_1node
+failmetric=750
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=/scratch/projects/benchmarks/workload/$test.\$PBS_JOBID
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:mpiprocs=24:ompthreads=1${SELECT_GPU}:mem=96gb
+#PBS -l walltime=0:30:00
+#PBS -j oe
+#PBS -P 90000001
+
+start=\`date +%s\`
+# Quantum Espresso has non-zero exit code so disable exit on command error
+#set -e
+
+cd "\$PBS_O_WORKDIR" || exit \$?
+mkdir $tmp
+cd $tmp || exit \$?
+
+cp -p $datadir/* .
+inputfile=ausurf.in
+module load quantum-espresso
+mpirun pw.x -i \$inputfile > stdout.\$PBS_JOBID 2>&1
+
+mv stdout.\$PBS_JOBID "\$PBS_O_WORKDIR/"
+if [ -f CRASH ] ; then mv CRASH  "\$PBS_O_WORKDIR/" ; fi
+rm -f ausurf.in Au.pbe-nd-van.UPF ausurf.wfc* ausurf.mix*
+cd "\$PBS_O_WORKDIR" || exit \$?
+rmdir "$tmp" || ls "$tmp"
+
+end=\`date +%s\`
+((metric=end-start))
+echo metric=\"\$metric\"
+
+echo check time within allowable limit
+if [ \$metric -gt $failmetric ] ; then echo FAIL ; exit 1 ; fi
+echo check for correctness
+grep "total energy              =  -11408" stdout.\$PBS_JOBID || echo FAIL
+grep "total energy              =  -11408" stdout.\$PBS_JOBID || exit 1
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

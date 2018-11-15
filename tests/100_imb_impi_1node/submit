@@ -1,0 +1,96 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=100_imb_impi_1node
+failmetric=400
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=/scratch/adm/sup/fsg3/benchmarks/workload/$test.\$PBS_JOBID
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:mpiprocs=24:ompthreads=1${SELECT_GPU}:mem=96gb
+#PBS -l walltime=0:15:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+cd "\$PBS_O_WORKDIR" || exit \$?
+
+# preparation
+sync
+/app/nsccadmin/bin/drop_caches
+memhog 64gb > /dev/null
+
+# node check
+echo == stream start
+OMP_NUM_THREADS=24 KMP_AFFINITY=compact LD_LIBRARY_PATH=/lib64:/app/intel/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64 /app/benchmarks/stream/bin/stream
+OMP_NUM_THREADS=24 KMP_AFFINITY=compact LD_LIBRARY_PATH=/lib64:/app/intel/compilers_and_libraries_2016.1.150/linux/compiler/lib/intel64 /app/benchmarks/stream/bin/stream
+echo == stream end
+
+# echo warm up
+module load intelmpi
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == warmup start
+mpirun -genv I_MPI_DEBUG 8 IMB-MPI1 -msglog 10
+echo == warmup end
+
+# start timing
+start=\`date +%s\`
+
+# production runs
+for i in {01..03} ; do
+ echo run \$i
+ mpirun IMB-MPI1 > IMB-MPI1.1x24.\$PBS_JOBID.\$i 2>&1
+done
+
+end=\`date +%s\`
+((metric=end-start))
+
+echo check for correctness
+# temporary, fix with checks of specific collectives and message sizes later
+for i in {01..03} ; do
+ echo check \$i
+ grep "All processes entering MPI_Finalize" IMB-MPI1.1x24.\$PBS_JOBID.\$i || { echo FAIL ; exit 1 ; }
+done
+
+echo check time within allowable limit
+failmetric=$failmetric
+echo failmetric=\"\$failmetric\"
+echo metric=\"\$metric\"
+if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
+
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

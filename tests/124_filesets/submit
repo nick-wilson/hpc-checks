@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=124_filesets
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=1${SELECT_GPU}:mem=1gb
+#PBS -l walltime=0:05:00
+#PBS -j oe
+#PBS -P 90000001
+cd "\$PBS_O_WORKDIR"
+file=\`ls -1 /app/nsccadmin/log/storage-statistics/home.fileset.status.* | tail -n 1\`
+tail -n +2 "\$file" | \
+ awk -F, '{if ( \$2 == 1 && \$3 == 0 && \$7 == 0 ) {print \$0}}' | tee home-nofileset.txt
+echo
+tail -n +2 "\$file" | \
+ awk -F, '{if ( \$2 == 1 && \$3 == 0 && \$7 == 0 && \$8 == 1 ) {print \$0}}' | grep , && { echo ACTIVE user without quota ; exit 1 ; }
+egrep -v '^(hows|mpehmd|888|1000054|stujks1),' home-nofileset.txt | grep , && exit 1
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
+

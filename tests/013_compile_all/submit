@@ -1,0 +1,101 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=013_compile_all
+failmetric=1800
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $test
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=1:ncpus=1${SELECT_GPU}:mem=1gb
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+start=\`date +%s\`
+
+cd "\$PBS_O_WORKDIR"
+
+cp -p $datadir/hello.{c,f,cpp} .
+for m in \
+ composerxe/2016.1.150 \
+ composerxe/2017.0.098 \
+ composerxe/2018.0.128 \
+ composerxe/2019.0.0.117 \
+ ; do
+  echo \$m
+  module purge
+  module load \$m
+  icc hello.c
+  ./a.out
+  rm -f a.out
+  icpc hello.cpp
+  ./a.out
+  rm -f a.out
+  ifort hello.f
+  ./a.out
+  rm -f a.out
+done
+
+echo nag-compiler
+module purge
+module load nag-compiler
+nagfor hello.f
+./a.out
+rm -f a.out
+
+echo gcc
+module purge
+gcc hello.c
+./a.out
+rm -f a.out
+g++ hello.cpp
+./a.out
+rm -f a.out
+gfortran hello.f
+./a.out
+rm -f a.out
+
+echo gcc/4.9.3
+module purge
+module load gcc/4.9.3
+gcc hello.c
+./a.out
+rm -f a.out
+g++ hello.cpp
+./a.out
+rm -f a.out
+gfortran hello.f
+./a.out
+rm -f a.out
+
+end=\`date +%s\`
+((metric=end-start))
+echo metric=\"\$metric\"
+if [ \$metric -gt $failmetric ] ; then echo FAIL ; exit 1 ; fi
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

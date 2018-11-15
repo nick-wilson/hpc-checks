@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=016_config_qmgr
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $test
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=1:ncpus=1:mem=1gb
+#PBS -l walltime=0:05:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+set -x
+
+cd "\$PBS_O_WORKDIR"
+
+datadir="$datadir"
+logdir="/app/nsccadmin/log/qmgr"
+bkupdir="/data/.pbsconf_backup/qmgr.print.server"
+
+hostname
+stdout_pbsnodes=pbsnodes-a.stdout
+pbsnodes -a | tee \$stdout_pbsnodes
+
+stdout_qmgr=qmgr.print.server
+qmgr -c "print server" > \$stdout_qmgr
+qmgr -c "print resource" >> \$stdout_qmgr
+qmgr -c "print sched" >> \$stdout_qmgr
+
+change=0
+diff \$stdout_qmgr "\$datadir/\$stdout_qmgr" || change=1
+if [ \$change -eq 1 ] ; then
+ stamp=\`date +%s\`
+ cp -p "\$stdout_qmgr" "\$datadir/"
+ cp -p "\$stdout_qmgr" "\$logdir/\$stdout_qmgr.\$stamp"
+ cp -p "\$stdout_qmgr" "\$bkupdir/\$stdout_qmgr.\$stamp"
+fi
+
+nproduction=\`grep -c "queue = production" \$stdout_pbsnodes\`
+echo nproduction=\$nproduction
+nstd=\`grep -c "resources_available.model = cx2550m1,cx400m1" \$stdout_pbsnodes\`
+echo nstd=\$nstd
+ngpu=\`grep -c "resources_available.model = cx2570m1,cx400m1" \$stdout_pbsnodes\`
+echo ngpu=\$ngpu
+nlmn=\`grep -c "resources_available.model = rx4770m1" \$stdout_pbsnodes\`
+echo nlmn=\$nlmn
+ndgx=\`grep -c "resources_available.model = dgx1" \$stdout_pbsnodes\`
+echo ndgx=\$ndgx
+nvis=\`grep -c "resources_available.model = vis" \$stdout_pbsnodes\`
+echo nvis=\$nvis
+
+tproduction=20
+
+rc=0
+reason=""
+if [ \$nstd -ne 1160 ] ; then
+ reason="\${reason}, incorrect number of std model in pbsnodes: \$nstd"
+ ((rc=rc+1))
+elif [ \$ngpu -ne 128 ] ; then
+ reason="\${reason}, incorrect number of gpu model in pbsnodes: \$ngpu"
+ ((rc=rc+1))
+elif [ \$nlmn -ne 9 ] ; then
+ reason="\${reason}, incorrect number of lmn model in pbsnodes: \$nlmn"
+ ((rc=rc+1))
+elif [ \$ndgx -ne 6 ] ; then
+ reason="\${reason}, incorrect number of dgx model in pbsnodes: \$ndgx"
+ ((rc=rc+1))
+elif [ \$nvis -ne 2 ] ; then
+ reason="\${reason}, incorrect number of vis model in pbsnodes: \$nvis"
+ ((rc=rc+1))
+elif [ \$nproduction -lt \$tproduction ] ; then
+ reason="\${reason}, less than \$tproduction nodes in production queue"
+ ((rc=rc+1))
+fi
+echo "\${reason#, }"
+exit \$rc
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

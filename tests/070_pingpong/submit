@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=070_pingpong
+
+# default to run on any hosts
+pbsname="$test"
+resources="select=2:ncpus=24:mpiprocs=2:ompthreads=1${SELECT_GPU}:mem=96gb"
+# run on host specified on command line
+if [ $# -eq 1 ] ; then resources="select=host=${1}:ncpus=24:mpiprocs=2:ompthreads=1${SELECT_GPU}:mem=96gb+1:ncpus=24:mpiprocs=2:ompthreads=1${SELECT_GPU}:mem=96gb" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="select=host=${1}:ncpus=24:mpiprocs=2:ompthreads=1${SELECT_GPU}:mem=96gb+host=${2}:ncpus=24:mpiprocs=2:ompthreads=1${SELECT_GPU}:mem=96gb" ; pbsname="${test}_${1}_${2}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l $resources
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+cd "\$PBS_O_WORKDIR"
+
+module load composerxe
+I_MPI_PROCESSOR_LIST=0,23 mpirun $datadir/mpi_nxnlatbw.intelmpi > /dev/null 2>&1
+for i in 0 1 2 ; do
+ I_MPI_PROCESSOR_LIST=0,23 mpirun $datadir/mpi_nxnlatbw.intelmpi > mpi_nxnlatbw.intelmpi.\$PBS_JOBID.\$i.stdout 2>&1
+done
+
+echo check latency
+metric=\`grep -h "us[[:space:]]" mpi_nxnlatbw.intelmpi.\$PBS_JOBID.[0-9].stdout | awk '{print \$2}' | sed -e "s,us,," | sort -n | tail -1\`
+echo metric=\"\$metric\"
+m=2.5
+nswitch=\`for h in \$(< \$PBS_NODEFILE) ; do pbsnodes \$h | grep resources_available.switch | sed -e 's/^.*=//' -e 's/,.*//' ; done | sort | uniq | wc -l\`
+if [ \$nswitch -eq 1 ] ; then m=1.5 ; fi
+echo \$metric | awk '{if ( \$1 < '\$m' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

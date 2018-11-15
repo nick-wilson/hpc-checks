@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=125_dgx_check
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+#tst=""
+tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSUSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=5:ngpus=1
+#PBS -q dgx
+#PBS -l walltime=0:05:00
+#PBS -j oe
+#PBS -P 90000001
+set -e
+env
+nvidia-smi
+cd "\$PBS_O_WORKDIR"
+image="nscc/local/tensorflow:latest"
+if [ x"\$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; echo FAIL ; exit 1 ; fi
+for c in ps images ; do
+echo nscc-docker \$c
+nscc-docker \$c || { echo FAIL ; exit 1 ; }
+done
+nscc-docker run --lustre \$image < stdin > stdout 2> stderr || { echo FAIL ; exit 1 ; }
+grep /scratch/.test/README stdout || { echo /scratch not mounted ; echo FAIL ; exit 1 ; }
+grep /home/.test/README stdout || { echo /home not mounted ; echo FAIL ; exit 1 ; }
+nvidia-smi|grep Tesla || { echo nvidia-smi error ; echo FAIL ; exit 1 ; }
+egrep '^uid=.*groups=.*,110029' stdout || { echo group error ; echo FAIL ; exit 1 ; }
+n=\`nvidia-smi|grep Tesla|wc -l\`
+if [ \$n -ne 1 ] ; then echo cgroup error ; echo FAIL ; exit 1 ; fi
+echo PASS
+EOF
+cat << EOF > stdin
+ls -l /scratch/.test/README /home/.test/README
+nvidia-smi
+id
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

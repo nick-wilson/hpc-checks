@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=107_integrity_gpfs
+testd=$test
+
+# run on any host
+pbsname="$test"
+# run on host specified on command line
+((ncpus=24))
+((mpiprocs=1))
+rnode="ncpus=${ncpus}:mpiprocs=${mpiprocs}:ompthreads=1${SELECT_GPU}:mem=96gb"
+resources=""
+if [ $# -eq 1 ] ; then resources="host=${1}:${rnode}+1:${rnode}" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="host=${1}:${rnode}+host=${2}:${rnode}" ; pbsname="${test}_${1}_${2}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$testd"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+if [ x"$RUN_MULTIPLE" == x ] ; then
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+cp -p "$datadir"/run.pbs .
+sed -i "s/%PBSNAME%/$pbsname/" run.pbs
+if [ x"$resources" != x ] ; then
+ sed -i "s/^#PBS -l select=.*/#PBS -l select=${resources}/" run.pbs
+fi
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

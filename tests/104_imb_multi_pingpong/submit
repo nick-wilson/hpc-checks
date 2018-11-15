@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+nodes=2
+ncpus=24
+mpiprocs=$ncpus
+test=104_imb_multi_pingpong
+failmetric=450.0
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=/scratch/adm/sup/fsg3/benchmarks/workload/$test.\$PBS_JOBID
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $test
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${nodes}:ncpus=${ncpus}:mpiprocs=${mpiprocs}:ompthreads=1${SELECT_GPU}:mem=96gb
+#PBS -l walltime=0:30:00
+#PBS -j oe
+#PBS -P 90000001
+
+failmetric="$failmetric"
+
+nodes=$nodes
+ppn=$mpiprocs
+((total=nodes*ppn))
+((mapq=2))
+((mapp=total/mapq))
+
+set -e
+
+cd "\$PBS_O_WORKDIR" || exit \$?
+
+# serialized, not ideal
+n=0
+while [ \$n -lt \$total ] ; do
+ # preparation
+ pbsdsh -n \$n hostname
+ pbsdsh -n \$n sync
+ pbsdsh -n \$n /app/nsccadmin/bin/drop_caches
+ # TODO: redirection of stdout does not work with pbsdsh
+ pbsdsh -n \$n memhog 64gb > /dev/null 2>&1
+ # node check
+ echo == stream start
+ pbsdsh -n \$n /app/benchmarks/stream/bin/stream-wrapper
+ echo == stream pass 2
+ pbsdsh -n \$n /app/benchmarks/stream/bin/stream-wrapper
+ echo == stream end
+ n=\`expr \$n + $mpiprocs\`
+done
+
+# echo warm up
+module load intelmpi
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == warmup start
+mpirun -genv I_MPI_DEBUG 8 IMB-MPI1 -msglog 10
+echo == warmup end
+
+# start timing
+date
+start=\`date +%s\`
+
+# production runs
+for i in {01..03} ; do
+ echo run \$i
+ mpirun IMB-MPI1 -map \${mapp}x\${mapq} -multi 1 PingPong > IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i 2>&1
+done
+
+date
+end=\`date +%s\`
+((timing=end-start))
+echo time spent: $timing seconds
+
+
+echo check for clean exit
+for i in {01..03} ; do
+ echo check \$i
+ grep "All processes entering MPI_Finalize" IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i || echo FAIL
+ grep "All processes entering MPI_Finalize" IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i || exit 1
+done
+
+echo check performance is above threshold
+for i in {01..03} ; do grep ' 4194304 ' IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i | sort -g -r -k 5  | tail -1 ; done
+metric=\`for i in {01..03} ; do grep ' 4194304 ' IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i | awk '{print \$5}' | sort -g -r | tail -1 ; done | sort -g | tail -1\`
+echo metric=\"\$metric\"
+echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
+echo \$metric | awk '{if ( \$1 >= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

@@ -1,0 +1,114 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=110_tensorflow
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -q gpu
+#PBS -l select=${target}:ngpus=1:ncpus=24:mem=96gb
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+echo == hostname
+hostname
+echo == uname
+uname -a
+echo == rpm
+rpm -qa
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == sysctl
+sysctl -a
+echo == uptime
+uptime
+echo == free
+free
+echo == ps
+ps -ef
+echo == nvidia-smi
+nvidia-smi -q
+echo == check ulimit -s
+ulimit -s | grep unlimited
+echo == check ulimit -l
+ulimit -l | grep unlimited
+echo == check ulimit -v
+ulimit -v | grep unlimited
+
+cd "\$PBS_O_WORKDIR"
+
+cp -p $datadir/hello.py .
+
+module purge || true
+module load tensorflow/1.4
+python hello.py > hello.stdout.0 2>&1
+fgrep 'Creating TensorFlow device (/device:GPU:0)' hello.stdout.0
+
+module purge || true
+module load tensorflow/1.0
+python hello.py > hello.stdout.1 2>&1
+fgrep 'Creating TensorFlow device (/gpu:0)' hello.stdout.1
+
+module purge || true
+module load tensorflow/1.0-python3
+python hello.py > hello.stdout.2 2>&1
+fgrep 'Creating TensorFlow device (/gpu:0)' hello.stdout.2
+
+module purge || true
+module load tensorflow/1.0-cpu
+python hello.py > hello.stdout.3 2>&1
+grep '^Hello, TensorFlow' hello.stdout.3
+
+module purge || true
+module load tensorflow/gpu
+python hello.py > hello.stdout.4 2>&1
+fgrep 'Creating TensorFlow device (/gpu:0)' hello.stdout.4
+
+module purge || true
+module load tensorflow/cpu
+python hello.py > hello.stdout.5 2>&1
+grep '^Hello, TensorFlow' hello.stdout.5
+
+module purge || true
+module load tensorflow/1.4-cpu
+python hello.py > hello.stdout.6 2>&1
+grep '^Hello, TensorFlow' hello.stdout.6
+
+rm -f gmon.out
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

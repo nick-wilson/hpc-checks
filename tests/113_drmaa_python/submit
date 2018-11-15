@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=113_drmaa_python
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat -w | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=1:mem=1gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+cd "\$PBS_O_WORKDIR"
+
+cp -p $datadir/* .
+module load python pbs-drmaa/1.0.19.fix
+python drmaa-python.py
+
+while [ ! -f drmaa_python.e[0-9]* ] ; do sleep 120 ; done
+while [ ! -f drmaa_python.o[0-9]* ] ; do sleep 120 ; done
+
+if [ -s drmaa_python.e[0-9]* ] ; then cat drmaa_python.e[0-9]* ; exit 1 ; fi
+grep PWD=\$PWD drmaa_python.o[0-9]*
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

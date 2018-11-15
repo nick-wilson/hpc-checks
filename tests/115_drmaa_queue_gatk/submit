@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=115_drmaa_queue_gatk
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+project=${project:-90000001}
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat -w | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=1:mem=1gb
+#PBS -l walltime=4:00:00
+#PBS -j oe
+#PBS -P $project
+
+set -e
+
+cd "\$PBS_O_WORKDIR"
+
+cp -a $datadir/* .
+
+module load gatk-queue
+module load pbs-drmaa/1.0.19.fix
+project=$project
+
+java \
+-Xmx2g -Djava.io.tmpdir=\$PWD/tmp \
+-jar \$GATK_QUEUE_ROOT/Queue.jar  \
+-S \$PWD/ExampleCountLoci.scala \
+-R \$PWD/exampleFASTA.fasta \
+-I \$PWD/exampleBAM.bam \
+-jobRunner Drmaa \
+-jobReport testout \
+-resMemLimit 4 \
+-memLimit 4 \
+--maximumNumberOfJobsToRunConcurrently 2 \
+-jobNative "-v PATH=\${PATH},PBS_O_WORKDIR=\${PWD},project=\${project} -l select=1:ncpus=1:mem=5gb -l walltime=1:00:00" \
+-run
+
+grep ^ExampleCountLoci  testout
+rm -rf *.{scala,fasta.fai,fasta,dict,bam.bai,bam}
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

@@ -1,0 +1,88 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=105_gpudirect
+#failmetric=5.0
+failmetric=10.0
+
+# default to run on any hosts
+pbsname="$test"
+rnode="ncpus=24:ngpus=1:mpiprocs=1:ompthreads=1:mem=96gb"
+resources="select=2:${rnode}"
+# run on host specified on command line
+if [ $# -eq 1 ] ; then resources="select=host=${1}:${rnode}+1:${rnode}" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="select=host=${1}:${rnode}+host=${2}:${rnode}" ; pbsname="${test}_${1}_${2}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l $resources
+#PBS -q gpu
+#PBS -l walltime=0:05:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+failmetric=$failmetric
+
+cd "\$PBS_O_WORKDIR" || exit \$?
+
+# echo warm up
+#module load openmpi/gcc493_gpu
+module load cuda80/toolkit/8.0.44
+module load gcc/4.9.3
+PATH=/app/openmpi/3.0.1/gcc493_gpu/bin:\$PATH
+export PATH
+osu_latency=/app/osu/5.3/ompi3.0.1/libexec/osu-micro-benchmarks/mpi/pt2pt/osu_latency
+
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == warmup start
+mpirun --bind-to core --rank-by core --report-bindings \$osu_latency H H > /dev/null 2>&1
+mpirun --bind-to core --rank-by core --report-bindings \$osu_latency -d cuda D D > /dev/null 2>&1
+mpirun -mca btl_openib_want_cuda_gdr 1 --bind-to core --rank-by core --report-bindings \$osu_latency -d cuda D D > /dev/null 2>&1
+echo == warmup end
+
+# production runs
+for i in {01..03} ; do
+ date
+ echo run \$i
+ mpirun --bind-to core --rank-by core --report-bindings \$osu_latency H H > osu_latency.HH.2x1.\$PBS_JOBID.\$i 2>&1
+ mpirun --bind-to core --rank-by core --report-bindings \$osu_latency -d cuda D D > osu_latency.DD.OFF.2x1.\$PBS_JOBID.\$i 2>&1
+ mpirun -mca btl_openib_want_cuda_gdr 1 --bind-to core --rank-by core --report-bindings \$osu_latency -d cuda D D > osu_latency.DD.ON.2x1.\$PBS_JOBID.\$i 2>&1
+done
+date
+
+echo performance check
+grep -h '^8 ' osu_latency.DD.ON.2x1.\$PBS_JOBID.*
+metric=\`grep -h '^8 ' osu_latency.DD.ON.2x1.\$PBS_JOBID.* | sort -nk 2 | head -1 | awk '{print \$2}'\`
+echo metric=\"\$metric\"
+echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=024_gpfs_old
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $test
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=1:ncpus=24:mem=96gb
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+cd "\$PBS_O_WORKDIR"
+
+dir=\`ls -1d $datadir/[0-9]*[0-9] | head -1\`
+
+if [ x"\$dir" == x ] ; then exit 1 ; fi
+
+mv "\$dir" "\$dir.tmp"
+dir="\$dir.tmp"
+
+cd "\$dir"
+
+echo delete 1000 existing files
+time rm -f {000..999}
+
+echo touch and rm 1000 files
+time touch {000..999}
+time rm {000..999}
+
+cd "\$PBS_O_WORKDIR"
+
+echo delete directory
+time rmdir "\$dir"
+
+echo make new files for future test
+d=$datadir/\`date +%s\`
+time mkdir "\$d"
+echo 990 empty files
+time touch "\$d"/{000..989}
+echo 10 files of 11M
+for i in {990..999} ; do time dd if=/dev/zero of="\$d/\$i" bs=1M count=11 ; done
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

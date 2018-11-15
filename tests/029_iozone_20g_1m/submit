@@ -1,0 +1,89 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=029_iozone_20g_1m
+testd=026_iozone_1node
+failmetric="350"
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$testd"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:mem=96gb
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+failmetric="$failmetric"
+PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
+
+echo == env
+env
+echo == ulimit
+ulimit -a
+
+$datadir/drop_caches
+memhog 95g > /dev/null
+
+# start timing
+date
+start=\`date +%s\`
+
+cd "\$PBS_O_WORKDIR" && \
+ iozone -Race > /dev/null && \
+ for i in 0 1 ; do
+  echo GPFS iteration \$i
+  time taskset -c 0 iozone -i 0 -i 1 -s 20g -r 1m -R > iozone.gpfs.20g.1m.\$i
+ done
+rm -f "\$PBS_O_WORKDIR"/iozone.tmp
+
+lustre_dir=/scratch/projects/benchmarks/workload/$test.\$PBS_JOBID
+mkdir -p "\$lustre_dir" && \
+ iozone -Race > /dev/null && \
+ cd "\$lustre_dir" && \
+ for i in 0 1 ; do
+  echo Lustre iteration \$i
+  time taskset -c 0 iozone -i 0 -i 1 -s 20g -r 1m -R > \$PBS_O_WORKDIR/iozone.lustre.20g.1m.\$i
+ done
+cd "\$PBS_O_WORKDIR" && rm -rf "\$lustre_dir"
+
+# end timing
+date
+end=\`date +%s\`
+((timing=end-start))
+
+echo time spent: \$timing seconds
+echo metric=\"\$timing\"
+echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
+echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

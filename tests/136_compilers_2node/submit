@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=136_compilers_2node
+
+# default to run on any hosts
+pbsname="$test"
+resources="select=2:ncpus=24:mpiprocs=6:ompthreads=4${SELECT_GPU}:mem=64gb"
+# run on host specified on command line
+if [ $# -eq 1 ] ; then resources="select=host=${1}:ncpus=24:mpiprocs=6:ompthreads=4${SELECT_GPU}:mem=64gb+1:ncpus=24:mpiprocs=6:ompthreads=4${SELECT_GPU}:mem=64gb" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="select=host=${1}:ncpus=24:mpiprocs=6:ompthreads=4${SELECT_GPU}:mem=64gb+host=${2}:ncpus=24:mpiprocs=6:ompthreads=4${SELECT_GPU}:mem=64gb" ; pbsname="${test}_${1}_${2}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/130_compilers"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l $resources
+#PBS -l walltime=0:15:00
+#PBS -j oe
+#PBS -P 90000001
+cd "\$PBS_O_WORKDIR"
+
+tar zxf $datadir/tests.tgz || exit \$?
+./run
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

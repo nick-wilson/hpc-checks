@@ -1,0 +1,66 @@
+#!/bin/bash
+#PBS -N %PBSNAME%
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=2:ncpus=24:mpiprocs=1:ompthreads=1:mem=96gb
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -P resv
+
+if [ x"$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; exit 1 ; fi
+if [ x"$PBS_O_WORKDIR" == x ] ; then echo PBS_O_WORKDIR unset ; exit 1 ; fi
+if [ x"$PBS_NODEFILE" == x ] ; then echo PBS_NODEFILE unset ; exit 1 ; fi
+
+set -e
+set -o pipefail
+
+cd "$PBS_O_WORKDIR" 
+
+base="%BASE%"
+if [ ! -d $base ] ; then base=$PWD ; fi
+
+mkdir "$base/tmp.$PBS_JOBID.0"
+for i in {1..10} ; do dd if=/dev/urandom of=`mktemp --tmpdir="$base/tmp.$PBS_JOBID.0"` bs=$RANDOM count=$RANDOM ; done
+ls -l "$base/tmp.$PBS_JOBID.0"
+du -sk "$base/tmp.$PBS_JOBID.0"
+
+uniq "$PBS_NODEFILE" | wc -l | grep '^2$'
+server1=`head -n 1 "$PBS_NODEFILE"`
+server2=`tail -n 1 "$PBS_NODEFILE"`
+
+swaphosts () {
+ if [ x"$server" == x"$server1" ] ; then
+  server="$server2"
+  other="$server1"
+ else
+  server="$server1"
+  other="$server2"
+ fi
+}
+
+((count=1))
+server="$server2"
+other="$server1"
+while [ $count -lt 10 ] ; do
+ ((last=count-1)) || true
+ ssh $server cp -a $base/tmp.$PBS_JOBID.$last $base/tmp.$PBS_JOBID.$count
+ ((count=count+1))
+ swaphosts
+ ((last=count-1))
+ ssh $server rsync -a $base/tmp.$PBS_JOBID.$last/ $base/tmp.$PBS_JOBID.$count/
+ ((count=count+1))
+ swaphosts
+ ((last=count-1))
+ mkdir $base/tmp.$PBS_JOBID.$count
+ ssh $server tar -C $PWD -cf - tmp.${PBS_JOBID}.${last} | ssh $other tar -C $PWD --transform=s/tmp.${PBS_JOBID}.${last}/tmp.${PBS_JOBID}.${count}/ -xf -
+ ((count=count+1))
+ swaphosts
+done
+
+getmd5(){
+if [ $# -ne 1 ] ; then echo arg error ; return 1 ; fi
+(cd "$1" && find . -type f -exec md5sum {} \; | sort | md5sum)
+}
+for d in tmp.${PBS_JOBID}.* ; do echo $d `getmd5 $d` ; done | tee md5.txt
+
+nlines=`awk '{print $2}' md5.txt | uniq | wc -l`
+if [ $nlines -ne 1 ] ; then echo FAIL ; exit 1 ; else rm -rf tmp.${PBS_JOBID}.* ; fi

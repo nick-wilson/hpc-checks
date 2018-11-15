@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=011_wget
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=1${SELECT_GPU}:mem=1gb
+#PBS -l walltime=0:30:00
+#PBS -j oe
+#PBS -P 90000001
+
+cd "\$PBS_O_WORKDIR"
+
+rc_all=0
+for url in http://www.google.com https://www.google.com https://www.nscc.sg https://www.docker.io ; do
+ file=\`echo \$url | sed -e s,:,_,g -e s,/,_,g\`
+ wget --tries=2 -O \$file \$url
+ rc=\$?
+ if [ \$rc -ne 0 ] ; then
+  echo ERROR
+  echo trying on nscc01
+  ssh nscc01 wget --tries=1 -O /dev/null \$url
+ fi
+ rc_all=\`expr \$rc + \$rc_all\`
+done
+if [ \$rc_all -eq 0 ] ; then echo PASS ; else echo FAIL ; fi
+exit \$rc_all
+
+# monitoring.us-east-2.amazonaws.com
+# monitoring.us-east-1.amazonaws.com
+# monitoring.us-west-1.amazonaws.com
+# monitoring.us-west-2.amazonaws.com
+# monitoring.ca-central-1.amazonaws.com
+# monitoring.ap-south-1.amazonaws.com
+# monitoring.ap-northeast-2.amazonaws.com
+# monitoring.ap-southeast-1.amazonaws.com
+# monitoring.ap-southeast-2.amazonaws.com
+# monitoring.ap-northeast-1.amazonaws.com
+# monitoring.eu-central-1.amazonaws.com
+# monitoring.eu-west-1.amazonaws.com
+# monitoring.eu-west-2.amazonaws.com
+# monitoring.sa-east-1.amazonaws.com
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

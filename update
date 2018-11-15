@@ -1,0 +1,30 @@
+#!/bin/sh
+## set -x
+cd `dirname $0` || exit $?
+
+# Environment settings
+PATH="/app/pbs/bin:/opt/pbs/bin:${PATH}" ; export PATH
+
+jobs=`awk '{if ( $5 == "Q" ) {printf "%s ",$3}}' < results.csv`
+
+for jobid in $jobs ; do
+ state=`qstat -x "$jobid" | tail -1 | awk '{print $5}'`
+ if [ x"$state" == xF ] ; then
+  stime=`qstat -x -f $jobid | grep '^    stime = ' | sed -e 's/^    stime = //'`
+  exit_status=`qstat -x -f $jobid | grep '^    Exit_status = ' | sed -e 's/^    Exit_status = //'`
+  walltime=`qstat -x -f $jobid | grep '^    resources_used.walltime = ' | sed -e 's/^    resources_used.walltime = //'`
+  hosts=`qstat -f -x $jobid | grep exec_host | sed -e 's%/[0-9]\*[0-9]*%%g' -e 's%/[0-9][0-9]*$%%' -e 's,^.* = ,,'`
+  metric=`echo $walltime | awk -F: '{printf "%.1f",$1*3600+$2*60+$3}'`
+  ofile=`qstat -x -f $jobid | awk '{printf "%s ",$0}' | sed -e "s/ \\t//g" | sed -e 's,^.* Output_Path = [a-z]*[0-9]*:,,' -e "s, .*,,"`
+  eval `grep ^metric= $ofile`
+  passfail=FAIL
+  if [ $exit_status -eq 0 ] ; then passfail=PASS ; fi
+  sed -i "s/ , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME / , $jobid , F , $stime , $passfail , $exit_status , $walltime , $metric , $hosts /" results.csv
+  grep ", $jobid ," results.csv
+ fi
+done
+
+grep FAIL results.csv > /dev/null && echo && echo FAILED: && grep FAIL results.csv
+
+gzip < results.csv > run/backup/results.csv.`date +%s`.gz || exit $?
+./run/backup/cleanup
