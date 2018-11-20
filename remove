@@ -1,0 +1,13 @@
+#!/bin/sh
+cd `dirname $0` || exit $?
+umask 022
+
+csv=results.csv
+
+for jid in "$@" ; do
+ # if job is in queue then kill it
+ qstat $jid > /dev/null 2>&1 && qdel $jid
+ # remove run directory and entry in results csv file
+ dir=`awk '{if ( $3 == "'$jid'" ) {print $NF}}' "$csv"`
+ rm -rf "$dir" && awk '{if ( $3 != "'$jid'" ) {print $0}}' "$csv" > "$csv.tmp" && mv "$csv.tmp" "$csv" || rm -f "$csv.tmp"
+done

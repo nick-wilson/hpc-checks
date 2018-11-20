@@ -12,6 +12,7 @@ Each test is written so that there is a positive check that the test has passed 
 Where applicable the performance of a benchmark or the time of execution is used as the pass/fail metric.
 
 The jobs are run through the PBS job scheduler via cron scripts.
+The standard tests are run daily, a few tests are run more frequently, some tests are run weekly and some are run on demand.
 
 The directory structure is as follows:
 ```
@@ -20,4 +21,5 @@ data		input data for tests
 etc/crontab	cron schedule
 run		output data from tests
 results.csv	summary of test results
+sanity-check	check that data in results.csv matches metrics in output files
 ```
