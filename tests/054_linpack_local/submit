@@ -81,6 +81,7 @@ echo check for throttling
 dmesg  | grep "Package temperature above threshold" && echo FAIL && exit 1 || echo OK
 
 echo check performance
+echo metric: \$metric
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF
 

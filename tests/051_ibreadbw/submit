@@ -68,7 +68,7 @@ for i in 1 2 3 4 ; do
  fi
 done
 
-echo did not meet threshold on any attempt
+echo did not meet threshold on any attempt: $threshold
 echo metric=\$metric
 echo FAIL
 exit 1

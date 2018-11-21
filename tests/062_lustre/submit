@@ -83,8 +83,8 @@ time rmdir $tmp
 
 end=\`date +%s\`
 ((metric=end-start))
-echo threshold for failure: $failmetric seconds
 echo metric=\"\$metric\"
+echo threshold for failure: $failmetric seconds
 if [ \$metric -gt $failmetric ] ; then echo FAIL ; exit 1 ; fi
 EOF
 

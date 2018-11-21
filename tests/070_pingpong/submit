@@ -54,6 +54,8 @@ echo metric=\"\$metric\"
 m=2.5
 nswitch=\`for h in \$(< \$PBS_NODEFILE) ; do pbsnodes \$h | grep resources_available.switch | sed -e 's/^.*=//' -e 's/,.*//' ; done | sort | uniq | wc -l\`
 if [ \$nswitch -eq 1 ] ; then m=1.5 ; fi
+echo failure threshold: \$m
+echo metric: \$metric
 echo \$metric | awk '{if ( \$1 < '\$m' ) {printf "PASS\n"}}' | grep PASS
 EOF
 

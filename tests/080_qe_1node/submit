@@ -61,7 +61,8 @@ end=\`date +%s\`
 ((metric=end-start))
 echo metric=\"\$metric\"
 
-echo check time within allowable limit
+echo check time within allowable limit: $failmetric
+echo metric: \$metric
 if [ \$metric -gt $failmetric ] ; then echo FAIL ; exit 1 ; fi
 echo check for correctness
 grep "total energy              =  -11408" stdout.\$PBS_JOBID || echo FAIL

@@ -98,7 +98,7 @@ for i in {01..03} ; do
  grep "All processes entering MPI_Finalize" IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i || exit 1
 done
 
-echo check performance is above threshold
+echo check performance is above threshold: \$failmetric
 for i in {01..03} ; do grep ' 4194304 ' IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i | sort -g -r -k 5  | tail -1 ; done
 metric=\`for i in {01..03} ; do grep ' 4194304 ' IMB-MPI1.multiPingPong.\${nodes}x\${ppn}.\$PBS_JOBID.\$i | awk '{print \$5}' | sort -g -r | tail -1 ; done | sort -g | tail -1\`
 echo metric=\"\$metric\"

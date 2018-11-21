@@ -59,9 +59,11 @@ lmstat -a
 
 end=\`date +%s\`
 ((metric=end-start))
-failmetric="$failmetric"
-echo failmetric=\"\$failmetric\"
 echo metric=\"\$metric\"
+
+failmetric="$failmetric"
+echo failmetric: \$failmetric
+echo metric: \$metric
 if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
 exit $rc
 EOF

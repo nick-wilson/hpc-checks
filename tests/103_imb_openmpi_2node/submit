@@ -92,6 +92,7 @@ done
 
 end=\`date +%s\`
 ((metric=end-start))
+echo metric=\"\$metric\"
 
 echo check for correctness
 # temporary, fix with checks of specific collectives and message sizes later
@@ -103,7 +104,7 @@ done
 echo check time within allowable limit
 failmetric=$failmetric
 echo failmetric=\"\$failmetric\"
-echo metric=\"\$metric\"
+echo metric: \$metric
 if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
 
 echo PASS

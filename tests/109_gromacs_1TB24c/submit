@@ -60,6 +60,7 @@ echo metric=\"\$metric\"
 
 failmetric="$failmetric"
 echo check time within allowable limit of \$failmetric
+echo metric: \$metric
 if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
 
 echo check for correctness

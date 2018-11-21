@@ -48,6 +48,7 @@ nscc-docker run \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 fgrep 'INFO:root:Epoch[0] Train-accuracy' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"
 metric=\`fgrep 'INFO:root:Epoch[0] Time cost'  stderr.\$PBS_JOBID | sed -e 's/^.*Time cost=//'\`
+echo metric=\"\$metric\"
 echo check performance
 echo threshold: \$failmetric
 echo metric: \$metric

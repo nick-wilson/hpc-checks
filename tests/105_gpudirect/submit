@@ -79,6 +79,7 @@ date
 echo performance check
 grep -h '^8 ' osu_latency.DD.ON.2x1.\$PBS_JOBID.*
 metric=\`grep -h '^8 ' osu_latency.DD.ON.2x1.\$PBS_JOBID.* | sort -nk 2 | head -1 | awk '{print \$2}'\`
+echo failmetric: \$failmetric
 echo metric=\"\$metric\"
 echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF

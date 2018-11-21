@@ -57,6 +57,7 @@ end=\`date +%s\`
 echo metric=\"\$metric\"
 
 failmetric="$failmetric"
+echo metric: \$metric
 echo check time within allowable limit of \$failmetric
 if [ \$metric -gt \$failmetric ] ; then echo FAIL ; exit 1 ; fi
 
