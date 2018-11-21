@@ -1,6 +1,7 @@
 #!/bin/sh
 ## set -x
 cd `dirname $0` || exit $?
+if [ -x local/update ] ; then exec ./local/update "$@" ; fi
 
 # Environment settings
 PATH="/app/pbs/bin:/opt/pbs/bin:${PATH}" ; export PATH

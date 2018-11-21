@@ -1,9 +1,9 @@
 #!/bin/sh
 cd `dirname $0` || exit $?
+if [ -x local/remove ] ; then exec ./local/remove "$@" ; fi
+
 umask 022
-
 csv=results.csv
-
 for jid in "$@" ; do
  # if job is in queue then kill it
  qstat $jid > /dev/null 2>&1 && qdel $jid
