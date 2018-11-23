@@ -1,2 +1,12 @@
-#!/bin/sh
- awk -F, '{print $1,$2,$8,$10}' results.csv | while read t j m d ; do if [ ! -d "$d" ] ; then continue ; fi ; jj=${j%.wlm01} ; if [ ! -f $d/*.o$jj ] ; then continue ; fi ; unset metric ; eval $(grep ^metric= $d/*.o$jj) ; if [ x"$metric" == x ] ; then continue ; fi ; if [ x"$m" != x"$metric" ] ; then echo $d ; echo $j $m $metric ; fi ; done
+#!/bin/bash
+##set -x
+awk -F, '{print $1,$2,$5,$8,$10}' results.csv | while read t j s m d ; do
+ if [ x"$s" == xUNKNOWN ] ; then continue ; fi
+ if [ ! -d "$d" ] ; then continue ; fi
+ ofile=`echo $d/${t}*.o${j%.wlm01}`
+ if [ ! -f "$ofile" ] ; then continue ; fi
+ unset metric
+ eval $(grep ^metric= $ofile)
+ if [ x"$metric" == x ] ; then continue ; fi
+ if [ x"$m" != x"$metric" ] ; then echo $d ; echo $j $m $metric ; fi
+done
