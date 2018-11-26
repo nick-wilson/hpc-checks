@@ -67,7 +67,7 @@ df /data
 df /app
 df /scratch
 df /seq
-#df /ime
+df /ime
 echo === ofed_info
 ofed_info
 echo == ps
