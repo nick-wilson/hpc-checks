@@ -2,7 +2,7 @@
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
-test=031_mdtest
+test=139_mdtest_ime_fuse
 failmetric="60"
 
 # run on any host
@@ -58,7 +58,7 @@ date
 start=\`date +%s\`
 
 cd "\$PBS_O_WORKDIR"
-for d in /dev/shm/tmp /home/projects/benchmarks/tmp /scratch/projects/benchmarks/tmp ; do
+for d in /ime/projects/benchmarks/tmp ; do
 
  # warmup
  rund=\$d/ior.\$PBS_JOBID.0

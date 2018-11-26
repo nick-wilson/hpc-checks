@@ -1,9 +1,10 @@
 #!/bin/sh
+# iozone I/O benchmark using DDN IME storage
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
-test=031_mdtest
-failmetric="60"
+test=138_iozone_ime_fuse
+failmetric="1500"
 
 # run on any host
 target=1
@@ -17,7 +18,7 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 # Script settings
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
-datadir="$BASE/data/$test"
+bindir="$BASE/data/bin"
 tmp=tmp
 script=run.pbs
 csv="$BASE/results.csv"
@@ -34,54 +35,53 @@ cat << EOF > run.pbs
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${target}:ncpus=24${SELECT_GPU}:mem=96gb
-#PBS -l walltime=0:30:00
+#PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -P 90000001
 
 set -e
 failmetric="$failmetric"
-module load intelmpi
-PATH="/app/benchmarks/ior/bin:\$PATH" ; export PATH
+PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
 
 echo == env
 env
 echo == ulimit
 ulimit -a
-echo == uname
-uname -a
 
-$datadir/drop_caches
+$bindir/drop_caches
 memhog 95g > /dev/null
 
 # start timing
 date
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR"
-for d in /dev/shm/tmp /home/projects/benchmarks/tmp /scratch/projects/benchmarks/tmp ; do
-
- # warmup
- rund=\$d/ior.\$PBS_JOBID.0
- mkdir -p \$rund
- export I_MPI_PIN_PROCESSOR=0
- mpirun -np 1 mdtest -n 10 -d \$rund -F -C -T -r -i 1 -N 1 -u > /dev/null
- rm -rf "\${rund}"
-
- # production
- rund=\$d/ior.\$PBS_JOBID.1
- mkdir -p \$rund
- export I_MPI_PIN_PROCESSOR=0
- mpirun -np 1 mdtest -n 1000 -d \$rund -F -C -T -r -i 10 -N 1 -u > mdtest.`uname -r`.\${d//\//_}.stdout
- rm -rf "\${rund}"
-
-done
+ime_uri="users/nscc/someone/$test.\$PBS_JOBID"
+ime_dir="/ime/\$ime_uri"
+mkdir -p "\$ime_dir" && \
+ cd "\$ime_dir" && \
+ iozone -Race > /dev/null && \
+ for i in 0 1 2 ; do
+  echo Lustre iteration \$i
+  time iozone -Ra > "\$PBS_O_WORKDIR"/iozone.ime.Ra.\$i
+  time iozone -Race > "\$PBS_O_WORKDIR"/iozone.ime.Race.\$i
+ done
+ date
+ int=\`date +%s\`
+ time ime-sync -b -r "ime://\$ime_uri"
+ time ime-release -r "ime://\$ime_uri"
+cd "\$PBS_O_WORKDIR" && rm -rf "\$ime_dir"
 
 # end timing
 date
 end=\`date +%s\`
 ((timing=end-start))
+((timing1=int-start))
+((timing2=end-int))
 
 echo time spent: \$timing seconds
+echo time spent in iozone: \$timing1 seconds
+echo time spent in ime-sync and ime-release: \$timing2 seconds
+echo threshold for failure: \$failmetric seconds
 echo metric=\"\$timing\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
 echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
