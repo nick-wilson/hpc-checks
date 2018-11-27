@@ -39,7 +39,6 @@ cat << EOF > run.pbs
 #PBS -j oe
 #PBS -P 90000001
 
-set -e
 failmetric="$failmetric"
 PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
 
@@ -54,6 +53,9 @@ memhog 95g > /dev/null
 # start timing
 date
 start=\`date +%s\`
+
+# start region where errors cause job to exit
+set -e
 
 ime_uri="projects/benchmarks/tmp/$test.\$PBS_JOBID"
 ime_dir="/ime/\$ime_uri"
@@ -70,6 +72,9 @@ mkdir -p "\$ime_dir" && \
  time ime-sync -b -r "ime://\$ime_uri"
  time ime-release -r "ime://\$ime_uri"
 cd "\$PBS_O_WORKDIR" && rm -rf "\$ime_dir"
+
+# end region where errors cause job to exit
+set +e
 
 # end timing
 date

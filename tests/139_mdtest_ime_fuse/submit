@@ -18,6 +18,7 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
 datadir="$BASE/data/$test"
+bindir="$BASE/data/bin"
 tmp=tmp
 script=run.pbs
 csv="$BASE/results.csv"
@@ -38,7 +39,6 @@ cat << EOF > run.pbs
 #PBS -j oe
 #PBS -P 90000001
 
-set -e
 failmetric="$failmetric"
 module load intelmpi
 PATH="/app/benchmarks/ior/bin:\$PATH" ; export PATH
@@ -50,12 +50,15 @@ ulimit -a
 echo == uname
 uname -a
 
-$datadir/drop_caches
+$bindir/drop_caches
 memhog 95g > /dev/null
 
 # start timing
 date
 start=\`date +%s\`
+
+# start region where errors cause job to exit
+set -e
 
 cd "\$PBS_O_WORKDIR"
 for d in /ime/projects/benchmarks/tmp ; do
@@ -76,11 +79,15 @@ for d in /ime/projects/benchmarks/tmp ; do
 
 done
 
+# end region where errors cause job to exit
+set +e
+
 # end timing
 date
 end=\`date +%s\`
 ((timing=end-start))
 
+echo threshold for failure: \$failmetric seconds
 echo time spent: \$timing seconds
 echo metric=\"\$timing\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
