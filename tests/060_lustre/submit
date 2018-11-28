@@ -18,7 +18,7 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 # Script settings
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
-datadir="$BASE/data/$test"
+datadir="$BASE/data/020_gpfs"
 tmp=/scratch/projects/benchmarks/workload/$test.\$PBS_JOBID
 script=run.pbs
 csv="$BASE/results.csv"

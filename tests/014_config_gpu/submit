@@ -119,6 +119,8 @@ echo == drop caches
 time /app/nsccadmin/bin/drop_caches
 echo == allocate 95gb of memory
 time memhog 95g
+echo
+echo PASS
 EOF
 
 jobid=`qsub $QSUB_ARGS run.pbs`
