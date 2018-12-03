@@ -48,11 +48,11 @@ cat << EOF > $script
 cd "$rundir"
 
 runbench(){
- ssh -o ConnectTimeout=5 \$target killall ib_read_bw > /dev/null 2>&1 < /dev/null
+ timeout 30 ssh -o ConnectTimeout=5 \$target killall ib_read_bw > /dev/null 2>&1 < /dev/null
  ssh -o ConnectTimeout=5 \$target ib_read_bw > /dev/null 2>&1 < /dev/null &
  sleep 1
  ib_read_bw \$target 
- ssh -o ConnectTimeout=5 \$target killall ib_read_bw > /dev/null 2>&1 < /dev/null
+ timeout 30 ssh -o ConnectTimeout=5 \$target killall ib_read_bw > /dev/null 2>&1 < /dev/null
 }
 
 for i in 1 2 3 4 ; do
