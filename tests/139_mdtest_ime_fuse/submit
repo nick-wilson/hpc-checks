@@ -61,7 +61,7 @@ start=\`date +%s\`
 set -e
 
 cd "\$PBS_O_WORKDIR"
-for d in /ime/projects/benchmarks/tmp ; do
+for d in /ime/projects/benchmarks/workload ; do
 
  # warmup
  rund=\$d/ior.\$PBS_JOBID.0

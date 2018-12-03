@@ -57,7 +57,7 @@ start=\`date +%s\`
 # start region where errors cause job to exit
 set -e
 
-ime_uri="projects/benchmarks/tmp/$test.\$PBS_JOBID"
+ime_uri="projects/benchmarks/workload/$test.\$PBS_JOBID"
 ime_dir="/ime/\$ime_uri"
 mkdir -p "\$ime_dir" && \
  cd "\$ime_dir" && \
