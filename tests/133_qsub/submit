@@ -34,16 +34,28 @@ cat << EOF > run.pbs
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${target}:ncpus=1${SELECT_GPU}:mem=1gb
-#PBS -l walltime=00:10:00
+#PBS -l walltime=00:30:00
 #PBS -j oe
 #PBS -P 90000001
 
 cd \$PBS_O_WORKDIR
+echo check direct command
+date
 start=\`date +%s\`
 echo true | /opt/pbs/bin/qsub -l select=1:ncpus=1:mem=1g -l walltime=0:01:00 -N qsub -j oe -P 90000001 || { echo FAIL ; exit 1 ; }
 end=\`date +%s\`
+date
 ((metric=end-start))
 echo metric=\"\$metric\"
+
+echo check wrapper
+date
+start=\`date +%s\`
+echo true | /app/pbs/bin/qsub -l select=1:ncpus=1:mem=1g -l walltime=0:01:00 -N qsub -j oe -P 90000001 || { echo FAIL ; exit 1 ; }
+end=\`date +%s\`
+date
+((wrapper=end-start))
+echo wrapper=\"\$wrapper\"
 
 failmetric=$failmetric
 echo threshold for failure: \$failmetric seconds
