@@ -39,8 +39,8 @@ set -e
 start=\`date +%s\`
 
 module load gromacs/5.1.2/gcc493/impi
-module load allinea/forge
-module load allinea/reports
+module load arm/forge
+module load arm/reports
 which map
 map --version
 
