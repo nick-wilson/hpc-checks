@@ -7,7 +7,7 @@ inputfile="pw.in"
 #args="-ntg 2 -ndiag 200"
 args="-nt 4 -nd 1024"
 mpiargs="-np 4096"
-failmetric=360000
+failmetric=1000
 
 nodes=171
 pbsname="$test"
@@ -36,7 +36,7 @@ cat << EOF > run.pbs
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${nodes}:ncpus=24:mpiprocs=24:ompthreads=1${SELECT_GPU}:mem=96gb
-#PBS -l walltime=24:00:00
+#PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -P 90000001
 
@@ -56,7 +56,9 @@ mpirun $mpiargs pw.x \$args -i \$inputfile > stdout.\$PBS_JOBID 2>&1
 
 mv stdout.\$PBS_JOBID "\$PBS_O_WORKDIR/"
 if [ -f CRASH ] ; then mv CRASH  "\$PBS_O_WORKDIR/" ; fi
-rm -f ausurf.in Au.pbe-nd-van.UPF ausurf.wfc* ausurf.mix*
+rm -f *.in *.UPF {out/,}*.wfc* {out/,}*.mix* {out/,}*.save
+mv output_*.log "\$PBS_O_WORKDIR/"
+rmdir out
 cd "\$PBS_O_WORKDIR" || exit \$?
 rmdir "$tmp" || ls "$tmp"
 
