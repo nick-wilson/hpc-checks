@@ -58,12 +58,14 @@ for m in \
   rm -f a.out
 done
 
+if [ 0 -eq 1 ] ; then
 echo nag-compiler
 module purge
 module load nag-compiler
 nagfor hello.f
 ./a.out
 rm -f a.out
+fi
 
 echo gcc
 module purge
