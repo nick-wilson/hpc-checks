@@ -61,7 +61,7 @@
 7  4      * * 0 t=113_drmaa_python       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 8  4      * * 0 t=114_drmaa_snakemake    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 9  4      * * 0 t=115_drmaa_queue_gatk   ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-10 4      * * * t=142_nag_lic            ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+10 4      * * 0 t=142_nag_lic            ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ##  1 5 1 1 * t=052_linpack_default    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  2 5 1 1 * t=054_linpack_local      ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
