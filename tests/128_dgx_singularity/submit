@@ -4,6 +4,7 @@
 BASE=/home/projects/benchmarks/workload
 test=128_dgx_singularity
 failmetric=3000.0
+image=mxnet:latest.simg
 
 # run on any host
 target=1
@@ -17,8 +18,8 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 # Script settings
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
-datadir=/home/projects/ai/singularity
-SINGULARITY_IMAGES=$datadir
+##datadir=/home/projects/ai/singularity
+##SINGULARITY_IMAGES=$datadir
 script=run.pbs
 csv="$BASE/results.csv"
 
@@ -44,9 +45,8 @@ set -e
 env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
-SINGULARITY_IMAGES=$SINGULARITY_IMAGES
-singularity shell --nv $SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:18.08-py2.simg < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
-egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/prjects ; echo FAIL ; exit 1 ; }
+singularity exec --nv $SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
+egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }
 egrep '^/dev/.*[[:space:]]/raid'  stdout.\$PBS_JOBID || { echo no /raid ; echo FAIL ; exit 1 ; }
 grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo FAIL ; exit 1 ; }
 fgrep 'INFO:root:Epoch[0] Train-accuracy' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
