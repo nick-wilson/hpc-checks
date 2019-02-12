@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=145_stream_numa
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24${SELECT_GPU}:mem=96gb
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+
+cd "\$PBS_O_WORKDIR"
+
+module load composerxe
+PATH="/app/benchmarks/stream/bin:\$PATH" ; export PATH
+
+export KMP_AFFINITY="granularity=fine,compact"
+export OMP_NUM_THREADS=6
+
+for c in {0..3} ; do
+ for m in {0..3} ; do
+  numactl -c \$c -m \$m stream > /dev/null 2>&1
+  for i in {0..2} ; do
+   numactl -c \$c -m \$m stream > stream.\$PBS_JOBID.\$c.\$m.\$i.stdout 2>&1
+  done
+ done
+done
+
+metric=0.0
+for i in 0 1 2 ; do
+ for j in 0 1 2 ; do
+  submetric=\`grep ^Triad: stream.\$PBS_JOBID.\$i.\$j.?.stdout | awk '{print \$2}' | sort -n | tail -n +3 | head -1\`
+  echo submetric\$i\$j=\$submetric
+  eval \$(echo \$metric \$submetric | awk '{if ( \$2 > \$1 ) {printf "metric=%s\n",\$2;};}')
+  thresh=10000.0
+  if [ x"\$i" == x"\$j" ] ; then thresh=27500.0 ; fi
+  echo \$submetric | awk '{if ( \$1 < '\$thresh' ) {printf "metric=%f\n",\$1}}'
+  echo \$submetric | awk '{if ( \$1 > '\$thresh' ) {printf "OK\n"}}' | grep OK
+ done
+done
+echo metric=\"\$metric\"
+echo PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
