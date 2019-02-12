@@ -52,7 +52,7 @@
 44 3      * * * t=130_compilers          ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 45 3      * * * t=135_cuda               ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### Weekly tests
-1  4      * * 0 t=105_gpudirect          ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 1  4      * * 0 t=105_gpudirect          ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 2  4      * * 0 t=055_linpack_cuda       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 3  4      * * 0 t=019_arm_reports        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 4  4      * * 0 t=025_arm_forge          ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
@@ -62,6 +62,8 @@
 8  4      * * 0 t=114_drmaa_snakemake    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 9  4      * * 0 t=115_drmaa_queue_gatk   ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 10 4      * * 0 t=142_nag_lic            ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+11 4      * * 0 t=145_stream_numa        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+12 4      * * 0 t=146_linpack_1x24       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ##  1 5 1 1 * t=052_linpack_default    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  2 5 1 1 * t=054_linpack_local      ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
