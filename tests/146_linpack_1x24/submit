@@ -1,0 +1,93 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+nodes=1
+ncpus=24
+failmetric="7.00e+02"
+mpiprocs=$ncpus
+test=146_linpack_1x24
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+tst="" #tst=`qstat -w | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:mpiprocs=24:ompthreads=1${SELECT_GPU}:mem=96gb
+#PBS -l walltime=2:00:00
+#PBS -j oe
+#PBS -P 90000001
+#PBS -q normal
+
+set -e
+failmetric=$failmetric
+
+cd "\$PBS_O_WORKDIR"
+
+module load openmpi
+
+echo clean node memory
+$datadir/drop_caches
+memhog 90g > /dev/null
+
+
+cp -p "$datadir"/HPL.dat.* .
+
+echo run warmup
+rm -f HPL.dat
+ln -s HPL.dat.warmup HPL.dat
+#export KMP_AFFINITY="granularity=fine,compact"
+#((pps=12/OMP_NUM_THREADS))
+#mpirun --map-by ppr:\${pps}:socket:pe=\${OMP_NUM_THREADS} --report-bindings $datadir/xhpl > /dev/null 2>&1
+mpirun --bind-to core --rank-by core --report-bindings $datadir/xhpl > /dev/null 2>&1
+
+echo run production
+rm -f HPL.dat
+ln -s HPL.dat.production HPL.dat
+#export KMP_AFFINITY="granularity=fine,compact"
+#((pps=12/OMP_NUM_THREADS))
+#mpirun --map-by ppr:\${pps}:socket:pe=\${OMP_NUM_THREADS} --report-bindings $datadir/xhpl > xhpl.stdout.\$PBS_JOBID 2>&1
+mpirun --bind-to core --rank-by core --report-bindings $datadir/xhpl > xhpl.stdout.\$PBS_JOBID 2>&1
+
+metric=\`grep "^WR00L2L2" xhpl.stdout.\$PBS_JOBID | awk '{print \$NF}'\`
+echo metric=\"\$metric\"
+
+echo check residual
+grep ' 0 tests completed and failed residual checks' xhpl.stdout.\$PBS_JOBID || { grep 'tests completed and failed residual checks' xhpl.stdout.\$PBS_JOBID ; echo FAIL ; exit 1 ; }
+echo Residual checks PASSED
+
+echo check for throttling
+dmesg  | grep "Package temperature above threshold" && echo FAIL && exit 1 || echo OK
+
+echo check performance
+echo failure threshold: \$failmetric
+echo metric: \$metric
+echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
