@@ -8,15 +8,37 @@ PATH="/app/pbs/bin:/opt/pbs/bin:${PATH}" ; export PATH
 
 jobs=`awk '{if ( $5 == "Q" ) {printf "%s ",$3}}' < results.csv`
 
+qlog=/app/nsccadmin/log/qstat/cleaned
+
+checkstate () {
+s=`qstat -x "$1" | tail -1 | awk '{print $5}'`
+if [ x"$s" == x ] ; then echo ERROR: job $1 purged from qstat history ; s="Q" ; fi
+echo $s
+}
+
+checkjobqstat(){
+ tmpfile=$(mktemp)
+ qstat -x -f "$1" > "$tmpfile"
+ ex -sc 'g/^\t/-j!' -c '%s/\t//g' -cx "$tmpfile"
+ cat "$tmpfile"
+ rm -f "$tmpfile"
+}
+
+checkjob () {
+ checkjobqstat "$1"
+}
+
 for jobid in $jobs ; do
- state=`qstat -x "$jobid" | tail -1 | awk '{print $5}'`
+ echo checking $jobid
+ state=`checkstate "$jobid"`
  if [ x"$state" == xF ] ; then
-  stime=`qstat -x -f $jobid | grep '^    stime = ' | sed -e 's/^    stime = //'`
-  exit_status=`qstat -x -f $jobid | grep '^    Exit_status = ' | sed -e 's/^    Exit_status = //'`
-  walltime=`qstat -x -f $jobid | grep '^    resources_used.walltime = ' | sed -e 's/^    resources_used.walltime = //'`
-  hosts=`qstat -f -x $jobid | grep exec_host | sed -e 's%/[0-9]\*[0-9]*%%g' -e 's%/[0-9][0-9]*$%%' -e 's,^.* = ,,'`
+  ofile=`checkjob $jobid | awk '{printf "%s ",$0}' | sed -e "s/ \\t//g" | grep "Output_Path = " | sed -e 's,^.* Output_Path = [a-z0-9\-]*:,,' -e "s, .*,,"`
+  if [ x"$ofile" == x ] ; then echo cannot find output file ; continue ; fi
+  stime=`checkjob $jobid | grep '^    stime = ' | sed -e 's/^    stime = //'`
+  exit_status=`checkjob $jobid | grep '^    Exit_status = ' | sed -e 's/^    Exit_status = //'`
+  walltime=`checkjob $jobid | grep '^    resources_used.walltime = ' | sed -e 's/^    resources_used.walltime = //'`
+  hosts=`checkjob $jobid | grep exec_host | sed -e 's%/[0-9]\*[0-9]*%%g' -e 's%/[0-9][0-9]*$%%' -e 's,^.* = ,,'`
   metric=`echo $walltime | awk -F: '{printf "%.1f",$1*3600+$2*60+$3}'`
-  ofile=`qstat -x -f $jobid | awk '{printf "%s ",$0}' | sed -e "s/ \\t//g" | sed -e 's,^.* Output_Path = [a-z]*[0-9]*:,,' -e "s, .*,,"`
   eval `grep ^metric= $ofile`
   passfail=FAIL
   if [ $exit_status -eq 0 ] ; then passfail=PASS ; fi
