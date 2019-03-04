@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=147_singularity
+failmetric=300.0
+image=mxnet:latest.simg
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+script=run.pbs
+csv="$BASE/results.csv"
+
+# Only have one test in queue at a time
+#tst=""
+#tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+cp -p $datadir/* .
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=24:ngpus=1:mem=96gb
+#PBS -q gpu
+#PBS -l walltime=0:10:00
+#PBS -j oe
+#PBS -P 90000001
+set -e
+env
+nvidia-smi
+cd "\$PBS_O_WORKDIR"
+module load singularity/latest
+
+singularity exec --nv \$SINGULARITY_IMAGES/tensorflow/tensorflow.1.11.0-gpu.simg /bin/sh < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID || { echo FAIL ; exit 1 ; }
+
+grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo FAIL ; exit 1 ; }
+grep ' /home$' stdout.\$PBS_JOBID || { echo /home not mounted ; exit 1 ; }
+grep ' /data$' stdout.\$PBS_JOBID || { echo /data not mounted ; exit 1 ; }
+grep ' /secure$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
+grep ' /scratch$' stdout.\$PBS_JOBID || { echo /scratch not mounted ; exit 1 ; }
+grep ' /seq$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
+
+echo PASS
+EOF
+
+cat << EOF > stdin
+id
+df
+env
+ulimit
+nvidia-smi
+python test-gpu.py
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

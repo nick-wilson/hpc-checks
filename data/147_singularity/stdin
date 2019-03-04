@@ -1,0 +1,6 @@
+id
+df
+env
+ulimit
+nvidia-smi
+python test-gpu.py
