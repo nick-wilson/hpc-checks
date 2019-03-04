@@ -46,18 +46,18 @@ env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
 # Test local modifications to latest TensorFlow image
-image="nscc/local/tensorflow:latest"
+image="nvcr.io/nvidia/tensorflow:latest"
 cd "\$PBS_O_WORKDIR" || exit \$?
 nscc-docker run --lustre \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 grep -x '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"
-metric=\`grep -x --after-context=21 '  Step Epoch Img/sec   Loss  LR' \$stdout.\$PBS_JOBID | awk '/^ *200 / {print \$3}'\`
+metric=\`grep -x --after-context=21 '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID | awk '/^ *190 / {print \$3}'\`
 echo metric=\"\$metric\"
 echo check performance
 echo threshold: \$failmetric
 echo metric: \$metric
-echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "PASS\n"}}' | grep PASS || { echo FAIL ; exit 1 ; }
 EOF
 
 cat << EOF > stdin
