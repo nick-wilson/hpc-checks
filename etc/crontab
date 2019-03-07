@@ -61,9 +61,14 @@
 7  4      * * 0 t=113_drmaa_python       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 8  4      * * 0 t=114_drmaa_snakemake    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 9  4      * * 0 t=115_drmaa_queue_gatk   ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-10 4      * * 0 t=142_nag_lic            ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-11 4      * * 0 t=145_stream_numa        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-12 4      * * 0 t=146_linpack_1x24       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+10 4      * * 0 t=137_dgx_tensorflow     ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+11 4      * * 0 t=142_nag_lic            ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+12 4      * * 0 t=145_stream_numa        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+13 4      * * 0 t=146_linpack_1x24       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+14 4      * * 0 t=147_singularity        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+15 4      * * 0 t=148_dgx_tensorflow_py2 ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+17 4      * * 0 t=150_dgx_singularity_tf3; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+18 4      * * 0 t=151_dgx_singularity_tf2; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ##  1 5 1 1 * t=052_linpack_default    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  2 5 1 1 * t=054_linpack_local      ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
@@ -73,7 +78,6 @@
 ##  6 5 1 1 * t=028_gpfs_taskset       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  7 5 1 1 * t=063_lustre_taskset     ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  8 5 1 1 * t=136_compilers_2node    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-##  9 5 1 1 * t=137_dgx_tensorflow     ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 10 5 1 1 * t=139_mdtest_ime_fuse    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 11 5 1 1 * t=140_QE_CaseA_1024p     ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 12 5 1 1 * t=141_QE_CaseB_4096p     ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi

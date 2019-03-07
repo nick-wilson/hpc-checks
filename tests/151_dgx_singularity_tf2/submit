@@ -2,12 +2,12 @@
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
-test=148_dgx_tensorflow_py2
+test=151_dgx_singularity_tf2
 failmetric=1750.0
 layers=152
 batch=64
 dataset="resnet"
-data="/scratch/projects/ai/datasets/imagenet/$dataset"
+data="/home/projects/ai/datasets/imagenet/$dataset"
 
 # run on any host
 target=1
@@ -46,11 +46,17 @@ env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
 # Test local modifications to latest TensorFlow image
+#image="nvcr.io/nvidia/tensorflow:18.08-py3"
+#image="nvcr.io/nvidia/tensorflow:19.02-py3"
+#image="nvcr.io/nvidia/tensorflow:latest-py3"
 image="nvcr.io/nvidia/tensorflow:latest-py2"
 cd "\$PBS_O_WORKDIR" || exit \$?
-nscc-docker images
-nscc-docker run --lustre \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
+ls -l \$SINGULARITY_IMAGES/\$image.simg
+md5sum \$SINGULARITY_IMAGES/\$image.simg
+singularity exec \$SINGULARITY_IMAGES/\$image.simg /bin/sh < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
+egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }
+egrep '^/dev/.*[[:space:]]/raid'  stdout.\$PBS_JOBID || { echo no /raid ; echo FAIL ; exit 1 ; }
 grep -x '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"
 metric=\`grep -x --after-context=21 '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID | awk '/^ *190 / {print \$3}'\`
@@ -62,6 +68,11 @@ echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "PASS\n"}}' | grep PAS
 EOF
 
 cat << EOF > stdin
+id
+df
+env
+ulimit
+nvidia-smi
 dataset="$dataset"
 layers="$layers"
 batch="$batch"

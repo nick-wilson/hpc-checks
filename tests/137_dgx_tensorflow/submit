@@ -48,6 +48,7 @@ cd "\$PBS_O_WORKDIR"
 # Test local modifications to latest TensorFlow image
 image="nvcr.io/nvidia/tensorflow:latest"
 cd "\$PBS_O_WORKDIR" || exit \$?
+nscc-docker images
 nscc-docker run --lustre \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 grep -x '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }

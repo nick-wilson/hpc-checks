@@ -44,6 +44,7 @@ nvidia-smi
 cd "\$PBS_O_WORKDIR"
 image="nvcr.io/nvidia/mxnet:latest"
 cd "\$PBS_O_WORKDIR" || exit \$?
+nscc-docker images
 nscc-docker run \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 fgrep 'INFO:root:Epoch[0] Train-accuracy' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"

@@ -45,6 +45,8 @@ set -e
 env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
+ls -l \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg
+md5sum \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg
 singularity exec --nv \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }
 egrep '^/dev/.*[[:space:]]/raid'  stdout.\$PBS_JOBID || { echo no /raid ; echo FAIL ; exit 1 ; }
