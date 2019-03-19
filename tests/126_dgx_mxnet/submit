@@ -4,6 +4,8 @@
 BASE=/home/projects/benchmarks/workload
 test=126_dgx_mxnet
 failmetric=60.0
+i_latest="nscc/local/mxnet:latest"
+image=${IMAGE:-$i_latest}
 
 # run on any host
 target=1
@@ -42,7 +44,7 @@ set -e
 env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
-image="nvcr.io/nvidia/mxnet:latest"
+image="$image"
 cd "\$PBS_O_WORKDIR" || exit \$?
 nscc-docker images
 nscc-docker run \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID

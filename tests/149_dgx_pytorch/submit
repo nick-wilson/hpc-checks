@@ -4,6 +4,8 @@
 BASE=/home/projects/benchmarks/workload
 test=149_dgx_pytorch
 failmetric=5750.0
+i_latest="nvcr.io/nvidia/pytorch:latest"
+image=${IMAGE:-$i_latest}
 
 # run on any host
 target=1
@@ -54,7 +56,7 @@ if [ ! -d "\$dataset" ] ; then
  tar -C / -xf "\$archive" || { rm -rf "\$dataset" ; echo FAIL ; exit 1 ; }
 fi
 #
-image="nvcr.io/nvidia/pytorch:latest"
+image="$image"
 nscc-docker run --lustre \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID || { echo FAIL ; exit 1 ; }
 grep /scratch/.test/README stdout.\$PBS_JOBID || { echo /scratch not mounted ; echo FAIL ; exit 1 ; }
 grep /home/.test/README stdout.\$PBS_JOBID || { echo /home not mounted ; echo FAIL ; exit 1 ; }

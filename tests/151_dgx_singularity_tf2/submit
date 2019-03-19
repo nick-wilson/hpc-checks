@@ -8,6 +8,8 @@ layers=152
 batch=64
 dataset="resnet"
 data="/home/projects/ai/datasets/imagenet/$dataset"
+i_latest="nvcr.io/nvidia/tensorflow:latest-py2"
+image=${IMAGE:-$i_latest}
 
 # run on any host
 target=1
@@ -46,10 +48,7 @@ env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
 # Test local modifications to latest TensorFlow image
-#image="nvcr.io/nvidia/tensorflow:18.08-py3"
-#image="nvcr.io/nvidia/tensorflow:19.02-py3"
-#image="nvcr.io/nvidia/tensorflow:latest-py3"
-image="nvcr.io/nvidia/tensorflow:latest-py2"
+image="$image"
 cd "\$PBS_O_WORKDIR" || exit \$?
 ls -l \$SINGULARITY_IMAGES/\$image.simg
 md5sum \$SINGULARITY_IMAGES/\$image.simg

@@ -8,6 +8,8 @@ layers=152
 batch=64
 dataset="resnet"
 data="/scratch/projects/ai/datasets/imagenet/$dataset"
+i_latest="nscc/local/tensorflow:latest"
+image=${IMAGE:-$i_latest}
 
 # run on any host
 target=1
@@ -46,7 +48,7 @@ env
 nvidia-smi
 cd "\$PBS_O_WORKDIR"
 # Test local modifications to latest TensorFlow image
-image="nvcr.io/nvidia/tensorflow:latest"
+image="$image"
 cd "\$PBS_O_WORKDIR" || exit \$?
 nscc-docker images
 nscc-docker run --lustre \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID

@@ -4,7 +4,8 @@
 BASE=/home/projects/benchmarks/workload
 test=128_dgx_singularity
 failmetric=3000.0
-image=mxnet:latest.simg
+i_latest="mxnet:latest.simg"
+image=${IMAGE:-$i_latest}
 
 # run on any host
 target=1
