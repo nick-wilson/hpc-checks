@@ -4,7 +4,7 @@
 BASE=/home/projects/benchmarks/workload
 test=128_dgx_singularity
 failmetric=3000.0
-i_latest="mxnet:latest.simg"
+i_latest="nvcr.io/nvidia/mxnet:latest"
 image=${IMAGE:-$i_latest}
 
 # run on any host
@@ -45,10 +45,12 @@ cat << EOF > run.pbs
 set -e
 env
 nvidia-smi
+image="$image"
+image="\$SINGULARITY_IMAGES/\$image.simg"
+ls -l "\$image"
+md5sum "\$image"
 cd "\$PBS_O_WORKDIR"
-ls -l \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg
-md5sum \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg
-singularity exec --nv \$SINGULARITY_IMAGES/nvcr.io/nvidia/mxnet:latest.simg /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
+singularity exec --nv "\$image" /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }
 egrep '^/dev/.*[[:space:]]/raid'  stdout.\$PBS_JOBID || { echo no /raid ; echo FAIL ; exit 1 ; }
 grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo FAIL ; exit 1 ; }
