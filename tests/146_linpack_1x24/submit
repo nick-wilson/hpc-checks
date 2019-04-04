@@ -7,7 +7,7 @@ ncpus=24
 failmetric="7.00e+02"
 mpiprocs=$ncpus
 test=146_linpack_1x24
-
+walltime="${WALLTIME:-24:00:00}"
 # run on any host
 target=1
 # run on host specified on command line
