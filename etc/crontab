@@ -67,6 +67,7 @@
 13 4      * * 0 t=146_linpack_1x24       ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 14 4      * * 0 t=147_singularity        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 15 4      * * 0 t=148_dgx_tensorflow_py2 ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+16 4      * * 0 t=149_dgx_pytorch        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 17 4      * * 0 t=150_dgx_singularity_tf3; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 18 4      * * 0 t=151_dgx_singularity_tf2; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
