@@ -70,6 +70,7 @@
 16 4      * * 0 t=149_dgx_pytorch        ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 17 4      * * 0 t=150_dgx_singularity_tf3; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 18 4      * * 0 t=151_dgx_singularity_tf2; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+19 4      * * 0 t=152_dgemm              ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ##  1 5 1 1 * t=052_linpack_default    ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ##  2 5 1 1 * t=054_linpack_local      ; x="/home/projects/benchmarks/workload/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
