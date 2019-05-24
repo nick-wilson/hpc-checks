@@ -19,6 +19,14 @@ tmp=/scratch/adm/sup/fsg3/benchmarks/workload/$test.\$PBS_JOBID
 script=run.pbs
 csv="$BASE/results.csv"
 
+pbsname="$test"
+rnode="ncpus=${ncpus}:mpiprocs=${mpiprocs}:ompthreads=1${SELECT_GPU}:mem=96gb"
+resources="select=${nodes}:${rnode}"
+# run on host specified on command line
+((nodes_minus1=nodes-1))
+if [ $# -eq 1 ] ; then resources="select=host=${1}:${rnode}+${nodes_minus1}:${rnode}" ; pbsname="${test}_${1}" ; fi
+if [ $# -eq 2 ] ; then resources="select=host=${1}:${rnode}+host=${2}:${rnode}" ; pbsname="${test}_${1}_${2}" ; fi
+
 # Only have one test in queue at a time
 tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
 if [ x"$tst" != x ] ; then exit ; fi
@@ -28,9 +36,9 @@ mkdir -p $rundir && cd $rundir || exit
 
 cat << EOF > run.pbs
 #!/bin/bash
-#PBS -N $test
+#PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
-#PBS -l select=${nodes}:ncpus=${ncpus}:mpiprocs=${mpiprocs}:ompthreads=1${SELECT_GPU}:mem=96gb
+#PBS -l $resources
 #PBS -l walltime=0:30:00
 #PBS -j oe
 #PBS -P 90000001

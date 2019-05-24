@@ -15,6 +15,9 @@ datadir="$BASE/data/$test"
 script=run.pbs
 csv="$BASE/results.csv"
 
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
 # Only have one test in queue at a time
 tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
 if [ x"$tst" != x ] ; then exit ; fi
@@ -24,9 +27,9 @@ mkdir -p $rundir && cd $rundir || exit
 
 cat << EOF > run.pbs
 #!/bin/bash
-#PBS -N $test
+#PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
-#PBS -l select=1:ncpus=1${SELECT_GPU}:mem=1gb
+#PBS -l select=${target}:ncpus=1${SELECT_GPU}:mem=1gb
 #PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -P 90000001
