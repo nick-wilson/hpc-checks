@@ -16,6 +16,7 @@ script=run.pbs
 csv="$BASE/results.csv"
 
 pbsname="$test"
+target=1
 if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
 
 # Only have one test in queue at a time
