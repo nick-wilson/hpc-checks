@@ -4,8 +4,8 @@
 BASE=/home/projects/benchmarks/workload
 test=149_dgx_pytorch
 failmetric=6000.0
-#i_latest="nvcr.io/nvidia/pytorch:latest"
-i_latest="nscc/local/pytorch:latest"
+#i_latest="nvcr.io/nvidia/pytorch:19.04"
+i_latest="nscc/local/pytorch:19.04"
 image=${IMAGE:-$i_latest}
 
 dockerarg="${DOCKERARGV:---ipc=host}"
@@ -36,8 +36,8 @@ if [ x"$tst" != x ] ; then exit ; fi
 # Prepare and submit test
 mkdir -p $rundir && cd $rundir || exit
 
-dataset=/raid/datasets/imagenet/jpeg2
-archive=/home/projects/ai/datasets/imagenet/raid.datasets.imagenet.jpeg2.tar
+dataset=/raid/datasets/imagenet/jpeg
+archive=/home/projects/ai/datasets/imagenet/raid.datasets.imagenet.jpeg.tar
 
 cat << EOF > run.pbs
 #!/bin/bash
@@ -68,7 +68,7 @@ grep /home/.test/README stdout.\$PBS_JOBID || { echo /home not mounted ; echo FA
 egrep '^uid=.*groups=.*,110029' stdout.\$PBS_JOBID || { echo group error ; echo FAIL ; exit 1 ; }
 #
 failmetric="$failmetric"
-metric=\`awk '{print \$90}' benchmark.json  | sed -e 's/\\[//' -e 's/\\],//'\`
+metric=\`grep '^Train summary' stdout.\$PBS_JOBID | awk '{print \$NF}'\`
 echo metric=\"\$metric\"
 echo check performance
 echo threshold: \$failmetric
@@ -81,10 +81,7 @@ ls -l /scratch/.test/README /home/.test/README
 nvidia-smi
 id
 cd /workspace/examples/resnet50v1.5
-# warm up
-python ./multiproc.py --nproc_per_node 8 ./main.py --arch resnet50 --training-only -p 1 --raport-file $rundir/warmup.json --fp16 --static-loss-scale 256 --epochs 1 --prof 100 $dataset > /dev/null
-# production
-python ./multiproc.py --nproc_per_node 8 ./main.py --arch resnet50 --training-only -p 1 --raport-file $rundir/benchmark.json --fp16 --static-loss-scale 256 --epochs 1 --prof 100 $dataset
+python ./multiproc.py --nproc_per_node 8 ./main.py --arch resnet50 --benchmark-training --fp16 --static-loss-scale 256 $dataset
 EOF
 
 jobid=`qsub $QSUB_ARGS run.pbs`
