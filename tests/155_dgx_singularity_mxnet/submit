@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=155_dgx_singularity_mxnet
+failmetric=200.0
+i_latest="nvcr.io/nvidia/mxnet:latest"
+image=${IMAGE:-$i_latest}
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+##datadir=/home/projects/ai/singularity
+##SINGULARITY_IMAGES=$datadir
+script=run.pbs
+csv="$BASE/results.csv"
+
+tst=""
+if [ x"$MULTI" == x ] ; then
+ # Only have one test in queue at a time
+ tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+fi
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=${target}:ncpus=40:ngpus=8
+#PBS -q dgx
+#PBS -l walltime=1:00:00
+#PBS -j oe
+#PBS -P 90000001
+set -e
+env
+nvidia-smi
+image="$image"
+image="\$SINGULARITY_IMAGES/\$image.simg"
+ls -l "\$image"
+md5sum "\$image"
+cd "\$PBS_O_WORKDIR"
+singularity exec --nv "\$image" /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
+egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }
+egrep '^/dev/.*[[:space:]]/raid'  stdout.\$PBS_JOBID || { echo no /raid ; echo FAIL ; exit 1 ; }
+grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo FAIL ; exit 1 ; }
+fgrep 'INFO:root:Epoch[0] Train-accuracy' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
+failmetric="$failmetric"
+metric=\`fgrep 'INFO:root:Epoch[0] Time cost'  stderr.\$PBS_JOBID | sed -e 's/^.*Time cost=//'\`
+echo metric=\"\$metric\"
+echo check performance
+echo threshold: \$failmetric
+echo metric: \$metric
+echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+cat << EOF > stdin
+id
+df
+env
+ulimit
+nvidia-smi
+cd /workspace/examples/image-classification
+python train_imagenet.py --benchmark 1 --gpus 0,1,2,3,4,5,6,7 --network inception-v3 --batch-size 64 --image-shape 3,299,299 --num-epochs 1 --kv-store device --num-examples 100000
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
