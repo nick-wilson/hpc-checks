@@ -3,7 +3,7 @@
 # Test settings
 BASE=/home/projects/benchmarks/workload
 test=155_dgx_singularity_mxnet
-failmetric=200.0
+failmetric=175.0
 i_latest="nvcr.io/nvidia/mxnet:latest"
 image=${IMAGE:-$i_latest}
 
