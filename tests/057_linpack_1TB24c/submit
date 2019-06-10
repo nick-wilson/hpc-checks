@@ -43,7 +43,7 @@ cat << EOF > run.pbs
 set -e
 
 failmetric="$failmetric"
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 unset OMP_NUM_THREADS
 export KMP_AFFINITY="granularity=fine,compact"

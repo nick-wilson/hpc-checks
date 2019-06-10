@@ -44,7 +44,7 @@ module load arm/forge
 which perf-report
 perf-report --version
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

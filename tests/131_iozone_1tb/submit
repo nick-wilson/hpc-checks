@@ -42,6 +42,8 @@ set -e
 failmetric="$failmetric"
 PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
 
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
 echo == env
 env
 echo == ulimit
@@ -65,8 +67,8 @@ runbench(){
  echo Lustre iteration \$i for size \$s with record \$r
  mkdir -p "\$lustre_dir" && \
  cd "\$lustre_dir" && \
- time iozone -c -e -P 0 -t \$t -i 0 -i 1 -s \$s -r \$r > "\$PBS_O_WORKDIR"/iozone.lustre.\${t}t.\$s.\$r.\$PBS_JOBID.\$i
- cd "\$PBS_O_WORKDIR" && rm -rf "\$lustre_dir"
+ time iozone -c -e -P 0 -t \$t -i 0 -i 1 -s \$s -r \$r > "\$workdir"/iozone.lustre.\${t}t.\$s.\$r.\$PBS_JOBID.\$i
+ cd "\$workdir" && rm -rf "\$lustre_dir"
 }
 
 for s in 1g 10g 100g 1000g ; do

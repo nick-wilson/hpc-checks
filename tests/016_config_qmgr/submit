@@ -33,7 +33,7 @@ cat << EOF > run.pbs
 set -e
 set -x
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 datadir="$datadir"
 logdir="/app/nsccadmin/log/qmgr"

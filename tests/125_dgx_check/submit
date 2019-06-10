@@ -44,7 +44,7 @@ cat << EOF > run.pbs
 set -e
 env
 nvidia-smi
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; else echo PBS_O_WORKDIR unavailable ; echo FAIL ; exit 1  ; fi
 image="$image"
 if [ x"\$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; echo FAIL ; exit 1 ; fi
 for c in ps images ; do

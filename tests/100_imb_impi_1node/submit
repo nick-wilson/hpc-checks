@@ -40,7 +40,7 @@ cat << EOF > run.pbs
 
 set -e
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 # preparation
 sync

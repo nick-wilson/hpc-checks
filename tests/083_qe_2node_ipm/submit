@@ -36,7 +36,8 @@ start=\`date +%s\`
 # Quantum Espresso has non-zero exit code so disable exit on command error
 #set -e
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" || exit \$? ; fi
+workdir="\$PWD"
 mkdir $tmp
 cd $tmp || exit \$?
 
@@ -47,8 +48,8 @@ module load ipm
 mpirun pw.x -i \$inputfile > stdout.\$PBS_JOBID 2>&1
 
 rm -f ausurf.in Au.pbe-nd-van.UPF ausurf.wfc* ausurf.mix*
-mv * "\$PBS_O_WORKDIR/"
-cd "\$PBS_O_WORKDIR" || exit \$?
+mv * "\$workdir/"
+cd "\$workdir" || exit \$?
 rmdir "$tmp" || ls "$tmp"
 
 end=\`date +%s\`

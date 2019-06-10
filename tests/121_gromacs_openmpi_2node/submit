@@ -47,7 +47,7 @@ start=\`date +%s\`
 
 module load openmpi/gcc493/1.10.2
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

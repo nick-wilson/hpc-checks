@@ -36,7 +36,7 @@ cat << EOF > run.pbs
 #PBS -l walltime=0:15:00
 #PBS -j oe
 #PBS -P 90000001
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 tar zxf $datadir/tests.tgz || exit \$?
 ./run

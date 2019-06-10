@@ -46,7 +46,7 @@ set -e
 
 failmetric=$failmetric
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 # echo warm up
 #module load openmpi/gcc493_gpu

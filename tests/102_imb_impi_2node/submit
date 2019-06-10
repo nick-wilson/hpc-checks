@@ -50,7 +50,7 @@ ppn=$mpiprocs
 
 set -e
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 # serialized, not ideal
 n=0

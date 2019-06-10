@@ -46,7 +46,7 @@ start=\`date +%s\`
 
 module load gcc/4.9.3 composerxe/2019.0.0.117
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

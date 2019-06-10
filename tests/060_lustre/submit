@@ -43,7 +43,7 @@ set -e
 
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 mkdir $tmp
 cd $tmp
 

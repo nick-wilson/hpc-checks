@@ -42,8 +42,8 @@ set -e
 
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR"
-
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
 rc=0
 v=5.4.0
 module load composerxe/2017.0.098
@@ -54,7 +54,7 @@ tar zxf $datadir/espresso-\$v.tar.gz && \
  ./configure --enable-openmp --enable-parallel --with-scalapack=intel && \
  make all || rc=$?
 
-cd "\$PBS_O_WORKDIR" && rm -rf espresso-\$v
+cd "\$workdir" && rm -rf espresso-\$v
 lmstat -a
 
 end=\`date +%s\`

@@ -35,6 +35,8 @@ cat << EOF > run.pbs
 #PBS -j oe
 #PBS -P 90000001
 
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+
 module purge
 module avail 2>&1 | grep \$HOME/privatemodules > /dev/null && module unuse \$HOME/privatemodules
 module avail

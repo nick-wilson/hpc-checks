@@ -42,6 +42,9 @@ cat << EOF > run.pbs
 failmetric="$failmetric"
 PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
 
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
+
 echo == env
 env
 echo == ulimit
@@ -64,14 +67,14 @@ mkdir -p "\$ime_dir" && \
  iozone -Race > /dev/null && \
  for i in 0 1 2 ; do
   echo Lustre iteration \$i
-  time iozone -Ra > "\$PBS_O_WORKDIR"/iozone.ime.Ra.\$i
-  time iozone -Race > "\$PBS_O_WORKDIR"/iozone.ime.Race.\$i
+  time iozone -Ra > "\$workdir"/iozone.ime.Ra.\$i
+  time iozone -Race > "\$workdir"/iozone.ime.Race.\$i
  done
  date
  int=\`date +%s\`
  time ime-sync -b -r "ime://\$ime_uri"
  time ime-release -r "ime://\$ime_uri"
-cd "\$PBS_O_WORKDIR" && rm -rf "\$ime_dir"
+cd "\$workdir" && rm -rf "\$ime_dir"
 
 # end region where errors cause job to exit
 set +e

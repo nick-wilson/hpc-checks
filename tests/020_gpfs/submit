@@ -51,20 +51,13 @@ echo == ulimit =============
 ulimit -a
 echo == uptime =============
 uptime
-### echo == ib_read_bw =============
-### ibtarget=$ibtarget
-### timeout 30 ssh -o ConnectTimeout=5 \$ibtarget killall ib_read_bw > /dev/null 2>&1 < /dev/null
-### ssh -o ConnectTimeout=5 \$ibtarget ib_read_bw > /dev/null 2>&1 < /dev/null &
-### sleep 1
-### ib_read_bw \$ibtarget
-### timeout 30 ssh -o ConnectTimeout=5 \$ibtarget killall ib_read_bw > /dev/null 2>&1 < /dev/null
 echo =======================
 
 set -e
 
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 mkdir $tmp
 cd $tmp
 

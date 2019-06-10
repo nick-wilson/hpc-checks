@@ -42,7 +42,8 @@ start=\`date +%s\`
 
 module load gromacs/5.1.2/gcc493/impi
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
 
 tmp="$tmp"
 mkdir "\$tmp"
@@ -53,8 +54,8 @@ cp -p \`which mdrun_mpi\` .
 inputfile=pme_verlet.tpr
 mpirun ./mdrun_mpi -pin on -ntomp \$OMP_NUM_THREADS -s "\$inputfile"
 rm -f pme_verlet.tpr state.cpt confout.gro ener.edr mdrun_mpi
-mv * "\$PBS_O_WORKDIR/"
-cd "\$PBS_O_WORKDIR"
+mv * "\$workdir/"
+cd "\$workdir"
 rmdir "\$tmp"
 
 end=\`date +%s\`

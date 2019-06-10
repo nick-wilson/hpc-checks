@@ -44,7 +44,9 @@ start=\`date +%s\`
 # Quantum Espresso has non-zero exit code so disable exit on command error
 #set -e
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" || exit \$? ; fi
+workdir="\$PWD"
+
 mkdir $tmp
 cd $tmp || exit \$?
 
@@ -54,12 +56,12 @@ args="$args"
 module load quantum-espresso
 mpirun $mpiargs pw.x \$args -i \$inputfile > stdout.\$PBS_JOBID 2>&1
 
-mv stdout.\$PBS_JOBID "\$PBS_O_WORKDIR/"
-if [ -f CRASH ] ; then mv CRASH  "\$PBS_O_WORKDIR/" ; fi
+mv stdout.\$PBS_JOBID "\$workdir/"
+if [ -f CRASH ] ; then mv CRASH  "\$workdir/" ; fi
 rm -f *.in *.UPF {out/,}*.wfc* {out/,}*.mix* {out/,}*.save
-mv output_*.log "\$PBS_O_WORKDIR/"
+mv output_*.log "\$workdir/"
 rmdir out
-cd "\$PBS_O_WORKDIR" || exit \$?
+cd "\$workdir" || exit \$?
 rmdir "$tmp" || ls "$tmp"
 
 end=\`date +%s\`

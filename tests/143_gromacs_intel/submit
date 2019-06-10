@@ -47,7 +47,7 @@ start=\`date +%s\`
 module load composerxe/2016.1.150
 . /app/gromacs/5.1.2/intelcc_intelmpi/bin/GMXRC.bash
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

@@ -57,7 +57,7 @@ memhog 95g > /dev/null
 date
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 for d in /dev/shm/tmp /home/projects/benchmarks/tmp /scratch/projects/benchmarks/tmp ; do
 
  # warmup

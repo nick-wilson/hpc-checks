@@ -45,7 +45,7 @@ cat << EOF > $script
 #PBS -P 90000001
 #PBS -q $q
 
-cd "$rundir"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 runbench(){
  timeout 30 ssh -o ConnectTimeout=5 \$target killall ib_read_bw > /dev/null 2>&1 < /dev/null

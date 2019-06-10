@@ -42,7 +42,8 @@ cat << EOF > run.pbs
 set -e
 
 failmetric="$failmetric"
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
 
 unset OMP_NUM_THREADS
 export KMP_AFFINITY="granularity=fine,compact"
@@ -65,8 +66,8 @@ echo run production
 nohup "./xlinpack_xeon64" lininput_production < /dev/null > xlinpack_xeon64.\$PBS_JOBID.stdout 2>&1
 
 echo transfer back output to permanent storage
-mv xlinpack_xeon64.\$PBS_JOBID.stdout "\$PBS_O_WORKDIR/"
-cd "\$PBS_O_WORKDIR"
+mv xlinpack_xeon64.\$PBS_JOBID.stdout "\$workdir/"
+cd "\$workdir"
 echo remove temporary directory
 rm -rf "$tmp"
 

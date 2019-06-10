@@ -76,7 +76,7 @@ start=\`date +%s\`
 module load gromacs/5.1.2/gcc493/impi_cuda
 module unload cuda
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

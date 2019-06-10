@@ -42,13 +42,13 @@ cat << EOF > run.pbs
 #PBS -j oe
 #PBS -P 90000001
 set -e
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 env
 nvidia-smi
 image="$image"
 image="\$SINGULARITY_IMAGES/\$image.simg"
 ls -l "\$image"
 md5sum "\$image"
-cd "\$PBS_O_WORKDIR"
 if [ x"\$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; echo FAIL ; exit 1 ; fi
 singularity exec --nv "\$image" /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep /home/projects stdout.\$PBS_JOBID || { echo /home not mounted ; echo FAIL ; exit 1 ; }

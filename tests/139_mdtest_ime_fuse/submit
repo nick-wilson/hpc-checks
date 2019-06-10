@@ -60,7 +60,7 @@ start=\`date +%s\`
 # start region where errors cause job to exit
 set -e
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 for d in /ime/projects/benchmarks/workload ; do
 
  # warmup

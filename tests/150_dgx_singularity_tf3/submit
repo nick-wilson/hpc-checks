@@ -49,13 +49,13 @@ cat << EOF > run.pbs
 set -e
 env
 nvidia-smi
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+
 # Test local modifications to latest TensorFlow image
 image="$image"
 image="\$SINGULARITY_IMAGES/\$image.simg"
 ls -l "\$image"
 md5sum "\$image"
-cd "\$PBS_O_WORKDIR"
 singularity exec "\$image" /bin/sh < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 egrep ':.*/home/projects[[:space:]].*[[:space:]]/home/projects'  stdout.\$PBS_JOBID || { echo no /home/projects ; echo FAIL ; exit 1 ; }

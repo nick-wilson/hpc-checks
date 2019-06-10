@@ -35,7 +35,7 @@ cat << EOF > run.pbs
 #PBS -l walltime=0:05:00
 #PBS -j oe
 #PBS -P 90000001
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 file=\`ls -1 /app/nsccadmin/log/storage-statistics/home.fileset.status.* | tail -n 1\`
 tail -n +2 "\$file" | \
  awk -F, '{if ( \$2 == 1 && \$3 == 0 && \$7 == 0 ) {print \$0}}' | tee home-nofileset.txt

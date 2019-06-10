@@ -40,6 +40,10 @@ cat << EOF > run.pbs
 #PBS -P 90000001
 
 set -e
+
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+workdir="\$PWD"
+
 failmetric="$failmetric"
 PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
 
@@ -55,13 +59,13 @@ memhog 95g > /dev/null
 date
 start=\`date +%s\`
 
-cd "\$PBS_O_WORKDIR" && \
+cd "\$workdir" && \
  iozone -Race > /dev/null && \
  for i in 0 1 ; do
   echo GPFS iteration \$i
   time taskset -c 0 iozone -i 0 -i 1 -s 20g -r 1m -R > iozone.gpfs.20g.1m.\$i
  done
-rm -f "\$PBS_O_WORKDIR"/iozone.tmp
+rm -f "\$workdir"/iozone.tmp
 
 lustre_dir=/scratch/projects/benchmarks/workload/$test.\$PBS_JOBID
 mkdir -p "\$lustre_dir" && \
@@ -69,9 +73,9 @@ mkdir -p "\$lustre_dir" && \
  cd "\$lustre_dir" && \
  for i in 0 1 ; do
   echo Lustre iteration \$i
-  time taskset -c 0 iozone -i 0 -i 1 -s 20g -r 1m -R > \$PBS_O_WORKDIR/iozone.lustre.20g.1m.\$i
+  time taskset -c 0 iozone -i 0 -i 1 -s 20g -r 1m -R > \$workdir/iozone.lustre.20g.1m.\$i
  done
-cd "\$PBS_O_WORKDIR" && rm -rf "\$lustre_dir"
+cd "\$workdir" && rm -rf "\$lustre_dir"
 
 # end timing
 date

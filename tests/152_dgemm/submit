@@ -40,7 +40,7 @@ cat << EOF > run.pbs
 
 set -e
 
-cd "\$PBS_O_WORKDIR"
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 module load composerxe/2019.0.0.117
 PATH="/app/benchmarks/dgemm/bin:\$PATH" ; export PATH

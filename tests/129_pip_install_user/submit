@@ -36,7 +36,7 @@ cat << EOF > run.pbs
 #PBS -j oe
 #PBS -P 90000001
 set -e
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 rm -rf \$HOME/.local \$HOME/.cache
 for m in python/2.7.12 python/3.5.1 python/intel-2.7 python/intel-3.5 anaconda/2 anaconda/3 ; do
  echo \$m

@@ -50,7 +50,7 @@ module load gromacs/5.1.2/gcc493/impi
 export I_MPI_OFA_TRANSLATION_CACHE=0
 export I_MPI_DAPL_TRANSLATION_CACHE=0
 
-cd \$PBS_O_WORKDIR
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 cp -p "$datadir"/* .
 
 inputfile=pme_verlet.tpr

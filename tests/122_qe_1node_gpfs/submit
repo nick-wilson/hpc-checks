@@ -41,7 +41,7 @@ start=\`date +%s\`
 # Quantum Espresso has non-zero exit code so disable exit on command error
 #set -e
 
-cd "\$PBS_O_WORKDIR" || exit \$?
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" || exit \$? ; fi
 
 cp -p $datadir/* .
 inputfile=ausurf.in
