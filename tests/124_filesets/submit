@@ -44,9 +44,19 @@ tail -n +2 "\$file" | \
  awk -F, '{if ( \$2 == 1 && \$3 == 0 && \$7 == 0 && \$8 == 1 ) {print \$0}}' | grep , && { echo ACTIVE user without quota ; exit 1 ; }
 egrep -v '^(hows|mpehmd|888|1000054|stujks1),' home-nofileset.txt | grep , && exit 1
 
+## echo check for users without personal AMS quota
+## file=\`ls -1 /app/nsccadmin/log/ams/personal.*.csv | tail -n 1\`
+## grep ,,,,, \$file && exit 1
+
 echo check for users without personal AMS quota
-file=\`ls -1 /app/nsccadmin/log/ams/personal.*.csv | tail -n 1\`
-grep ,,,,, \$file && exit 1
+ldapsearch -x -b "ou=academy,ou=People,dc=cm,dc=cluster" uid | grep ^uid: | while read blank u ; do
+ if [ -f /app/nscc/log/myprojects/\$u ] ; then continue ; fi
+ if [ x"\$u" = x888 ] ; then continue ; fi
+ if [ x"\$u" = x5 ] ; then continue ; fi
+ echo missing personal project: \$u
+ echo FAIL
+ exit 1
+done
 
 echo PASS
 EOF
