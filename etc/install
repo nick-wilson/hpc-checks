@@ -1,0 +1,5 @@
+#!/bin/sh
+user="${1:-fsg3}"
+basedir="${2:-/home/projects/benchmarks/workload}"
+cd `dirname "$0"` || exit $?
+su -c "sed -e s/%USER%/${user}/g -e s,%BASEDIR%,${basedir},g crontab > /etc/cron.d/workload-tests"
