@@ -28,8 +28,11 @@ tmp=/scratch/adm/sup/fsg3/benchmarks/workload/$test.\$PBS_JOBID
 script=run.pbs
 csv="$BASE/results.csv"
 
-# Only have one test in queue at a time
-tst="" #tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+tst=""
+if [ x"$MULTI" == x ] ; then
+ # Only have one test in queue at a time
+ tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+fi
 if [ x"$tst" != x ] ; then exit ; fi
 
 # Prepare and submit test

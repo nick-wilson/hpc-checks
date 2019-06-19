@@ -27,8 +27,11 @@ resources="select=${nodes}:${rnode}"
 if [ $# -eq 1 ] ; then resources="select=host=${1}:${rnode}+${nodes_minus1}:${rnode}" ; pbsname="${test}_${1}" ; fi
 if [ $# -eq 2 ] ; then resources="select=host=${1}:${rnode}+host=${2}:${rnode}" ; pbsname="${test}_${1}_${2}" ; fi
 
-# Only have one test in queue at a time
-tst="" #tst=`qstat | awk '{if ( $2 == "'$test'" ) {print $0}}'`
+tst=""
+if [ x"$MULTI" == x ] ; then
+ # Only have one test in queue at a time
+ tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+fi
 if [ x"$tst" != x ] ; then exit ; fi
 
 # Prepare and submit test
