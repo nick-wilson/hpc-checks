@@ -85,3 +85,7 @@
 ## 13 5 1 1 * %USER% t=128_dgx_singularity           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 14 5 1 1 * %USER% t=142_nag_lic                   ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 15 5 1 1 * %USER% t=105_gpudirect                 ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 16 5 1 1 * %USER% t=154_dgx_pytorch_19_04         ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 17 5 1 1 * %USER% t=156_dgx_check_nolustre        ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 18 5 1 1 * %USER% t=157_dgx_tf_nolustre           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 19 5 1 1 * %USER% t=158_dgx_tf2_nolustre          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
