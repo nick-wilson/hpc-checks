@@ -80,7 +80,7 @@ reason=""
 if [ \$nstd -ne 1160 ] ; then
  reason="\${reason}, incorrect number of std model in pbsnodes: \$nstd"
  ((rc=rc+1))
-elif [ \$ngpu -ne 128 ] ; then
+elif [ \$ngpu -lt 126 ] ; then
  reason="\${reason}, incorrect number of gpu model in pbsnodes: \$ngpu"
  ((rc=rc+1))
 elif [ \$nlmn -ne 9 ] ; then
