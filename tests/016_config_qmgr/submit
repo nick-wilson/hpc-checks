@@ -1,4 +1,6 @@
 #!/bin/sh
+gpunodes=126
+stdnodes=1160
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
@@ -77,10 +79,10 @@ tproduction=20
 
 rc=0
 reason=""
-if [ \$nstd -ne 1160 ] ; then
+if [ \$nstd -ne $stdnodes ] ; then
  reason="\${reason}, incorrect number of std model in pbsnodes: \$nstd"
  ((rc=rc+1))
-elif [ \$ngpu -lt 126 ] ; then
+elif [ \$ngpu -lt $gpunodes ] ; then
  reason="\${reason}, incorrect number of gpu model in pbsnodes: \$ngpu"
  ((rc=rc+1))
 elif [ \$nlmn -ne 9 ] ; then
