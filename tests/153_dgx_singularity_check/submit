@@ -44,6 +44,8 @@ cat << EOF > run.pbs
 set -e
 if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 env
+free
+ps -ef
 nvidia-smi
 image="$image"
 image="\$SINGULARITY_IMAGES/\$image.simg"
