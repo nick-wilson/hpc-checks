@@ -1,0 +1,10 @@
+#!/bin/sh
+dir=samples
+thisdir=$(cd `dirname $0` && pwd)
+if [ x"$PWD" == x"$thisdir" ] ; then exit 1 ; fi
+if [ ! -d "$dir" ] ; then exit 1 ; fi
+echo cleaning directory $dir
+find "$dir" -type f | while read f ; do diff -q "$f" "$thisdir/$f" > /dev/null 2>&1 && rm -f "$f" ; done 
+find "$dir" -depth -type d -exec rmdir {} \; 2>/dev/null
+echo remaining files:
+find "$dir" -type f
