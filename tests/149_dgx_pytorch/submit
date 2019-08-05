@@ -68,7 +68,15 @@ grep /home/.test/README stdout.\$PBS_JOBID || { echo /home not mounted ; echo FA
 egrep '^uid=.*groups=.*,110029' stdout.\$PBS_JOBID || { echo group error ; echo FAIL ; exit 1 ; }
 #
 failmetric="$failmetric"
-metric=\`awk '{print \$90}' benchmark.json  | sed -e 's/\\[//' -e 's/\\],//'\`
+##metric=\`awk '{print \$90}' benchmark.json  | sed -e 's/\\[//' -e 's/\\],//'\`
+nmax=200
+s="" ; i=1 ; until [ x"\$s" == 'x"train.total_ips":' ] ; do ((i=i+1)) ; s=\`awk '{print \$'\$i'}' benchmark.json\` ; if [ \$i -eq \$nmax ] ; then break ; fi ; done
+metric=0.0
+if [ \$i -ne \$nmax ] ; then
+ ((i=i+1))
+ metric=\`awk '{print \$'\$i'}' benchmark.json  | sed -e 's/\\[//' -e 's/\\],//'\`
+fi
+
 echo metric=\"\$metric\"
 echo check performance
 echo threshold: \$failmetric
