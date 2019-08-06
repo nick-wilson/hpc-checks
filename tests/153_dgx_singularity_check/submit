@@ -55,6 +55,7 @@ if [ x"\$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; echo FAIL ; exit 1 ; fi
 singularity exec --nv "\$image" /bin/bash < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep /home/projects stdout.\$PBS_JOBID || { echo /home not mounted ; echo FAIL ; exit 1 ; }
 grep /raid/.test/README stdout.\$PBS_JOBID || { echo /raid not mounted ; echo FAIL ; exit 1 ; }
+grep /scratch/.test/README stdout.\$PBS_JOBID || { echo /scratch not mounted ; echo FAIL ; exit 1 ; }
 egrep '^uid=.*groups=.*,110029' stdout.\$PBS_JOBID || { echo group error ; echo FAIL ; exit 1 ; }
 nvidia-smi|grep Tesla || { echo nvidia-smi error ; echo FAIL ; exit 1 ; }
 n=\`nvidia-smi|grep Tesla|wc -l\`
@@ -64,7 +65,7 @@ if [ \$n -ne 1 ] ; then echo cgroup error in container ; echo FAIL ; exit 1 ; fi
 echo PASS
 EOF
 cat << EOF > stdin
-ls -ld /raid/.test/README /home/projects
+ls -ld /raid/.test/README /home/projects /scratch/.test/README
 nvidia-smi
 id
 EOF
