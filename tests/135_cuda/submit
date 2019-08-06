@@ -3,6 +3,7 @@
 # Test settings
 BASE=/home/projects/benchmarks/workload
 test=135_cuda
+version=${VERSION:-10.1}
 
 # run on any host
 target=1
@@ -58,7 +59,7 @@ nvidia-smi -ac 3004,875
 echo == check for GPU memory ECC errors
 nvidia-smi -q -d PAGE_RETIREMENT  | egrep 'Pending[[:space:]]*:[[:space:]]*YES' && { echo ERROR: GPU memory ECC errors ; echo FAIL ; exit 1 ; }
 
-module load cuda/9.2
+module load cuda/$version
 tar xf $datadir/samples.tgz
 cd samples
 make

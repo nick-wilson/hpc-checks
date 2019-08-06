@@ -70,6 +70,9 @@
 16 4      * * 0 %USER% t=150_dgx_singularity_tf3  ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 17 4      * * 0 %USER% t=151_dgx_singularity_tf2  ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 18 4      * * 0 %USER% t=152_dgemm                ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+19 4      * * 0 %USER% t=135_cuda                 ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then MULTI=y VERSION=7.0 $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+20 4      * * 0 %USER% t=135_cuda                 ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then MULTI=y VERSION=7.5 $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+21 4      * * 0 %USER% t=135_cuda                 ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then MULTI=y VERSION=9.2 $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ## 1  5 1 1 * %USER% t=052_linpack_default           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 2  5 1 1 * %USER% t=054_linpack_local             ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
