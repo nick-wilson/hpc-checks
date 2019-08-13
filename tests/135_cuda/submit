@@ -62,7 +62,13 @@ nvidia-smi -q -d PAGE_RETIREMENT  | egrep 'Pending[[:space:]]*:[[:space:]]*YES' 
 module load cuda/$version
 tar xf $datadir/samples.tgz
 cd samples
-make
+if [ x"\$CUDA_PATH" != x ] ; then
+ make CUDA_PATH=\$CUDA_PATH
+elif [ x"\$CUDA_HOME" != x ] ; then
+ make CUDA_PATH=\$CUDA_HOME
+else
+ make
+fi
 for exe in ./bin/x86_64/linux/release/* ; do echo == running \$exe ; eval \$exe ; done
 echo PASS
 EOF
