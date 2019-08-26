@@ -52,6 +52,8 @@
 44 3      * * * %USER% t=130_compilers            ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 45 3      * * * %USER% t=135_cuda                 ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 46 3      * * * %USER% t=153_dgx_singularity_check; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+47 3      * * * %USER% t=160_random               ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+48 3      * * * %USER% t=161_dgx_tf_1gpu          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### Weekly tests
 2  4      * * 0 %USER% t=055_linpack_cuda         ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 3  4      * * 0 %USER% t=019_arm_reports          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
