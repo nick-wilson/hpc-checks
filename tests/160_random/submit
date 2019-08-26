@@ -30,7 +30,7 @@ if [ x"$tst" != x ] ; then exit ; fi
 # Prepare and submit test
 mkdir -p $rundir && cd $rundir || exit
 
-count=${BYTES:-512}
+count=${BYTES:-128}
 entropyavail=/proc/sys/kernel/random/entropy_avail
 cat << EOF > run.pbs
 #!/bin/bash
