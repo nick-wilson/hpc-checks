@@ -11,6 +11,9 @@ data="/home/projects/ai/datasets/imagenet/$dataset"
 i_latest="nscc/local/tensorflow:latest"
 image=${IMAGE:-$i_latest}
 
+dockerarg="$DOCKERARGV"
+###dockerarg="$dockerarg --lustre"
+
 # run on any host
 target=1
 # run on host specified on command line
@@ -53,7 +56,7 @@ if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 # Test local modifications to latest TensorFlow image
 image="$image"
 nscc-docker images
-nscc-docker run \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
+nscc-docker run $dockerarg \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 grep -x '  Step Epoch Img/sec   Loss  LR' stdout.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"

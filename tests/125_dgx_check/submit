@@ -6,6 +6,9 @@ test=125_dgx_check
 i_latest="nscc/local/tensorflow:latest"
 image=${IMAGE:-$i_latest}
 
+dockerarg="$DOCKERARGV"
+###dockerarg="$dockerarg --lustre"
+
 # run on any host
 target=1
 # run on host specified on command line
@@ -51,7 +54,7 @@ for c in ps images ; do
 echo nscc-docker \$c
 nscc-docker \$c || { echo FAIL ; exit 1 ; }
 done
-nscc-docker run --lustre \$image < stdin > stdout 2> stderr || { echo FAIL ; exit 1 ; }
+nscc-docker run $dockerarg \$image < stdin > stdout 2> stderr || { echo FAIL ; exit 1 ; }
 grep /scratch/.test/README stdout || { echo /scratch not mounted ; echo FAIL ; exit 1 ; }
 grep /home/.test/README stdout || { echo /home not mounted ; echo FAIL ; exit 1 ; }
 nvidia-smi|grep Tesla || { echo nvidia-smi error ; echo FAIL ; exit 1 ; }

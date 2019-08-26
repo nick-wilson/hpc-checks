@@ -9,6 +9,7 @@ i_latest="nscc/local/pytorch:latest"
 image=${IMAGE:-$i_latest}
 
 dockerarg="${DOCKERARGV:---ipc=host}"
+###dockerarg="$dockerarg --lustre"
 
 # run on any host
 target=1
@@ -62,7 +63,7 @@ if [ ! -d "\$dataset" ] ; then
 fi
 #
 image="$image"
-nscc-docker run --lustre $dockerarg \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID || { echo FAIL ; exit 1 ; }
+nscc-docker run $dockerarg \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID || { echo FAIL ; exit 1 ; }
 grep /scratch/.test/README stdout.\$PBS_JOBID || { echo /scratch not mounted ; echo FAIL ; exit 1 ; }
 grep /home/.test/README stdout.\$PBS_JOBID || { echo /home not mounted ; echo FAIL ; exit 1 ; }
 egrep '^uid=.*groups=.*,110029' stdout.\$PBS_JOBID || { echo group error ; echo FAIL ; exit 1 ; }
