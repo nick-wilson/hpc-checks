@@ -59,7 +59,7 @@ echo metric=\"\$metric\"
 echo check performance
 echo threshold: \$failmetric
 echo metric: \$metric
-echo \$metric | awk '{if ( \$1 < '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF
 
 cat << EOF > stdin
