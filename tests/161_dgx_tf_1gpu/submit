@@ -3,7 +3,8 @@
 # Test settings
 BASE=/home/projects/benchmarks/workload
 test=161_dgx_tf_1gpu
-failmetric=200.0
+#failmetric=200.0
+failmetric=175.0
 layers=152
 batch=64
 dataset="resnet"
