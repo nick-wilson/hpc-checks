@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
@@ -28,6 +28,7 @@ if [ x"$MULTI" == x ] ; then
 fi
 if [ x"$tst" != x ] ; then exit ; fi
 
+walltime=${WALLTIME:-0:05:00}
 # Prepare and submit test
 mkdir -p $rundir && cd $rundir || exit
 
@@ -36,7 +37,7 @@ cat << EOF > run.pbs
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${target}:ncpus=24${SELECT_GPU}:mem=96gb
-#PBS -l walltime=0:05:00
+#PBS -l walltime=${walltime}
 #PBS -j oe
 #PBS -P 90000001
 
