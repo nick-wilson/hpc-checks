@@ -32,12 +32,13 @@ if [ x"$tst" != x ] ; then exit ; fi
 # Prepare and submit test
 mkdir -p $rundir && cd $rundir || exit
 
+walltime=${WALLTIME:-1:00:00}
 cat << EOF > run.pbs
 #!/bin/bash
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${target}:ncpus=24${SELECT_GPU}:mem=96gb
-#PBS -l walltime=1:00:00
+#PBS -l walltime=${walltime}
 #PBS -j oe
 #PBS -P 90000001
 #PBS -q normal
