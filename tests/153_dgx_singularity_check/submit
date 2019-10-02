@@ -48,7 +48,8 @@ free
 ps -ef
 nvidia-smi
 image="$image"
-image="\$SINGULARITY_IMAGES/\$image.simg"
+image="\$SINGULARITY_IMAGES/\$image.sif"
+if [ ! -f "\$image" ] ; then image="\$SINGULARITY_IMAGES/\$image.simg" ; fi
 ls -l "\$image"
 md5sum "\$image"
 if [ x"\$PBS_JOBID" == x ] ; then echo PBS_JOBID unset ; echo FAIL ; exit 1 ; fi

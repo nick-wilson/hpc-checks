@@ -47,7 +47,8 @@ set -e
 env
 nvidia-smi
 image="$image"
-image="\$SINGULARITY_IMAGES/\$image.simg"
+image="\$SINGULARITY_IMAGES/\$image.sif"
+if [ ! -f "\$image" ] ; then image="\$SINGULARITY_IMAGES/\$image.simg" ; fi
 ls -l "\$image"
 md5sum "\$image"
 if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi

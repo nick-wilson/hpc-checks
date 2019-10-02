@@ -53,7 +53,8 @@ if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 # Test local modifications to latest TensorFlow image
 image="$image"
-image="\$SINGULARITY_IMAGES/\$image.simg"
+image="\$SINGULARITY_IMAGES/\$image.sif"
+if [ ! -f "\$image" ] ; then image="\$SINGULARITY_IMAGES/\$image.simg" ; fi
 ls -l "\$image"
 md5sum "\$image"
 singularity exec "\$image" /bin/sh < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID

@@ -74,6 +74,8 @@ layers="$layers"
 batch="$batch"
 data="$data"
 cd /workspace/nvidia-examples/cnn
+#export TF_ENABLE_AUTO_MIXED_PRECISION=1
+#mpiexec --allow-run-as-root -np 8 -x TF_ENABLE_AUTO_MIXED_PRECISION  python \${dataset}.py
 mpiexec --allow-run-as-root -np 8 python \${dataset}.py \
  --layers \$layers \
  -b \$batch \
