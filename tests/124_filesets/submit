@@ -71,8 +71,7 @@ for u in \$users ; do
  if [ -f /app/nscc/log/myprojects/\$u ] ; then continue ; fi
  if [ x"\$u" = x888 ] ; then continue ; fi
  if [ x"\$u" = x5 ] ; then continue ; fi
- if [ x"\$u" = xdonta ] ; then continue ; fi
- if [ x"\$u" = xdingyaow ] ; then continue ; fi
+ ldapsearch -x -LLL "(uid=\${u})" ou | grep "ou=smu" && continue
  echo missing personal project: \$u
  echo FAIL
  exit 1
