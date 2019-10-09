@@ -51,11 +51,16 @@ module load singularity/latest
 singularity exec --nv \$SINGULARITY_IMAGES/$image /bin/sh < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID || { echo FAIL ; exit 1 ; }
 
 grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo FAIL ; exit 1 ; }
-grep ' /home$' stdout.\$PBS_JOBID || { echo /home not mounted ; exit 1 ; }
-grep ' /data$' stdout.\$PBS_JOBID || { echo /data not mounted ; exit 1 ; }
-grep ' /secure$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
-grep ' /scratch$' stdout.\$PBS_JOBID || { echo /scratch not mounted ; exit 1 ; }
-grep ' /seq$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
+###grep ' /home$' stdout.\$PBS_JOBID || { echo /home not mounted ; exit 1 ; }
+###grep ' /data$' stdout.\$PBS_JOBID || { echo /data not mounted ; exit 1 ; }
+###grep ' /secure$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
+###grep ' /scratch$' stdout.\$PBS_JOBID || { echo /scratch not mounted ; exit 1 ; }
+###grep ' /seq$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
+grep '^/home/projects$' stdout.\$PBS_JOBID || { echo /home not mounted ; exit 1 ; }
+grep '^/data/.test$' stdout.\$PBS_JOBID || { echo /data not mounted ; exit 1 ; }
+grep '^/secure/.test$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
+grep '^/scratch/.test$' stdout.\$PBS_JOBID || { echo /scratch not mounted ; exit 1 ; }
+grep '^/seq/.test$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
 
 echo PASS
 EOF
@@ -63,6 +68,7 @@ EOF
 cat << EOF > stdin
 id
 df
+ls -1d /home/projects /scratch/.test /seq/.test /data/.test /secure/.test
 env
 ulimit
 nvidia-smi
