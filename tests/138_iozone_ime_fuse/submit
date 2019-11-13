@@ -55,6 +55,10 @@ ulimit -a
 
 $bindir/drop_caches
 memhog 95g > /dev/null
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 
 # start timing
 date

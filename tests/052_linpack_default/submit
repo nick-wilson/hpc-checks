@@ -55,6 +55,10 @@ PATH=\$MKLROOT/benchmarks/linpack:\$PATH ; export PATH
 echo clean node memory
 $datadir/drop_caches
 memhog 90g > /dev/null
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 
 echo run warmup
 nohup xlinpack_xeon64 $datadir/lininput_warmup < /dev/null > /dev/null 2>&1

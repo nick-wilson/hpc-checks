@@ -49,6 +49,10 @@ if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 sync
 /app/nsccadmin/bin/drop_caches
 memhog 64gb > /dev/null
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 
 # node check
 echo == stream start

@@ -61,6 +61,10 @@ export CUDA_DTRSM_SPLIT=0.60
 echo clean node memory
 $datadir/drop_caches
 memhog 90g > /dev/null
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 
 echo == hostname
 hostname

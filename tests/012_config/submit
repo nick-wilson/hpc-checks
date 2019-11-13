@@ -101,6 +101,11 @@ echo == drop caches
 time /app/nsccadmin/bin/drop_caches
 echo == allocate 95gb of memory
 time memhog 95g
+echo === stats
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f ; done
+numastat -n
+numastat -m
+cat /sys/kernel/debug/extfrag/extfrag_index
 echo
 echo PASS
 EOF
