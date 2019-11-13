@@ -42,8 +42,8 @@ set -e
 start=\`date +%s\`
 
 module load gromacs/5.1.2/gcc493/impi
-module load arm/reports
-module load arm/forge
+module load arm/reports$ALLINEA_MODULE
+module load arm/forge$ALLINEA_MODULE
 which perf-report
 perf-report --version
 
