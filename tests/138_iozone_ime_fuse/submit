@@ -79,8 +79,8 @@ mkdir -p "\$ime_dir" && \
  done
  date
  int=\`date +%s\`
- time ime-sync -b -r "ime://\$ime_uri"
- time ime-release -r "ime://\$ime_uri"
+ time ime-sync -b -r "\$ime_dir"
+ time ime-release -r "\$ime_dir"
 cd "\$workdir" && rm -rf "\$ime_dir"
 
 # end region where errors cause job to exit
