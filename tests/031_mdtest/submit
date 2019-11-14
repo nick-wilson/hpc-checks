@@ -53,6 +53,8 @@ ulimit -a
 echo == uname
 uname -a
 
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+
 $datadir/drop_caches
 memhog 95g > /dev/null
 for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
@@ -64,7 +66,6 @@ cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 date
 start=\`date +%s\`
 
-if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 for d in /dev/shm/tmp /home/projects/benchmarks/tmp /scratch/projects/benchmarks/tmp ; do
 
  # warmup
