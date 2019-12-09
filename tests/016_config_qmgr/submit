@@ -74,6 +74,10 @@ ndgx=\`grep -c "resources_available.model = dgx1" \$stdout_pbsnodes\`
 echo ndgx=\$ndgx
 nvis=\`grep -c "resources_available.model = vis" \$stdout_pbsnodes\`
 echo nvis=\$nvis
+nk40=\`grep -c 'resources_available.ngpus = 1\$'  \$stdout_pbsnodes\`
+echo nk40=\$nk40
+nv100=\`grep -c 'resources_available.ngpus = 8\$'  \$stdout_pbsnodes\`
+echo nv100=\$nv100
 
 tproduction=20
 
@@ -85,11 +89,18 @@ if [ \$nstd -ne $stdnodes ] ; then
 elif [ \$ngpu -lt $gpunodes ] ; then
  reason="\${reason}, incorrect number of gpu model in pbsnodes: \$ngpu"
  ((rc=rc+1))
+elif [ \$nk40 -lt $gpunodes ] ; then
+ reason="\${reason}, incorrect number of resources_available.ngpus=1 in pbsnodes: \$nk40"
+ ((rc=rc+1))
 elif [ \$nlmn -ne 9 ] ; then
  reason="\${reason}, incorrect number of lmn model in pbsnodes: \$nlmn"
  ((rc=rc+1))
 elif [ \$ndgx -ne 6 ] ; then
  reason="\${reason}, incorrect number of dgx model in pbsnodes: \$ndgx"
+ ((rc=rc+1))
+elif [ \$nv100 -ne 5 ] ; then
+ # one less than ndgx due to half node for test+dev
+ reason="\${reason}, incorrect number of resources_available.ngpus=8 in pbsnodes: \$nv100"
  ((rc=rc+1))
 elif [ \$nvis -ne 2 ] ; then
  reason="\${reason}, incorrect number of vis model in pbsnodes: \$nvis"
