@@ -58,7 +58,7 @@ grep Tesla stdout.\$PBS_JOBID || { echo no NVIDIA support in container  ; echo F
 ###grep ' /seq$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
 grep '^/home/projects$' stdout.\$PBS_JOBID || { echo /home not mounted ; exit 1 ; }
 grep '^/data/.test$' stdout.\$PBS_JOBID || { echo /data not mounted ; exit 1 ; }
-grep '^/secure/.test$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
+##grep '^/secure/.test$' stdout.\$PBS_JOBID || { echo /secure not mounted ; exit 1 ; }
 grep '^/scratch/.test$' stdout.\$PBS_JOBID || { echo /scratch not mounted ; exit 1 ; }
 grep '^/seq/.test$' stdout.\$PBS_JOBID || { echo /seq not mounted ; exit 1 ; }
 
@@ -68,7 +68,8 @@ EOF
 cat << EOF > stdin
 id
 df
-ls -1d /home/projects /scratch/.test /seq/.test /data/.test /secure/.test
+##ls -1d /home/projects /scratch/.test /seq/.test /data/.test /secure/.test
+ls -1d /home/projects /scratch/.test /seq/.test /data/.test
 env
 ulimit
 nvidia-smi
