@@ -12,6 +12,7 @@ target=1
 # run on host specified on command line
 pbsname="$test"
 if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+pbsname="${{pbsname:0:15}"
 
 # Environment settings
 PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
