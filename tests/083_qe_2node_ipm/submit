@@ -19,7 +19,8 @@ csv="$BASE/results.csv"
 tst=""
 if [ x"$MULTI" == x ] ; then
  # Only have one test in queue at a time
- tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+ qname="${test:0:15}"
+ tst=`qstat | awk '{if ( $2 == "'$qname'" ) {print $0}}'`
 fi
 if [ x"$tst" != x ] ; then exit ; fi
 

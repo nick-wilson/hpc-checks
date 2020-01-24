@@ -25,7 +25,8 @@ script=run.pbs
 csv="$BASE/results.csv"
 
 # Only have one test in queue at a time
-tst=`qstat | awk '{if ( $2 == "'$pbsname'" ) {print $0}}'`
+qname="${pbsname:0:15}"
+tst=`qstat | awk '{if ( $2 == "'$qname'" ) {print $0}}'`
 if [ x"$tst" != x ] ; then exit ; fi
 
 # Prepare and submit test
