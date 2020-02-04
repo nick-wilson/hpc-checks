@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# Test settings
+BASE=/home/projects/benchmarks/workload
+test=164_dgx_mdtest
+failmetric="90"
+
+# run on any host
+target=1
+# run on host specified on command line
+pbsname="$test"
+if [ x"$1" != x ] ; then target="host=$1" ; pbsname="${test}_${1}" ; fi
+
+# Environment settings
+PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
+
+# Script settings
+d=`date +%Y/%m/%d/%H/%M/%S`
+rundir="$BASE/run/$d/$test"
+datadir="$BASE/data/$test"
+tmp=tmp
+script=run.pbs
+csv="$BASE/results.csv"
+
+tst=""
+if [ x"$MULTI" == x ] ; then
+ # Only have one test in queue at a time
+ qname="${pbsname:0:15}"
+ tst=`qstat | awk '{if ( $2 == "'$qname'" ) {print $0}}'`
+fi
+if [ x"$tst" != x ] ; then exit ; fi
+
+# Prepare and submit test
+mkdir -p $rundir && cd $rundir || exit
+
+cat << EOF > run.pbs
+#!/bin/bash
+#PBS -N $pbsname
+#%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
+#PBS -l select=1:ncpus=40:ngpus=8
+#PBS -l walltime=0:30:00
+#PBS -q dgx
+#PBS -j oe
+#PBS -P 90000001
+
+set -e
+failmetric="$failmetric"
+PATH="/home/app/dgx/openmpi-3.1.1-gnu/bin:/home/app/dgx/usr/bin:\$PATH" ; export PATH
+
+echo == env
+env
+echo == ulimit
+ulimit -a
+echo == uname
+uname -a
+
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+
+# start timing
+date
+start=\`date +%s\`
+
+for d in /dev/shm/tmp /raid/projects/benchmarks/tmp /home/projects/benchmarks/tmp /scratch/projects/benchmarks/tmp ; do
+
+ # warmup
+ rund=\$d/ior.\$PBS_JOBID.0
+ mkdir -p \$rund
+ export I_MPI_PIN_PROCESSOR=0
+ mpirun -np 1 mdtest -n 10 -d \$rund -F -C -T -r -i 1 -N 1 -u > /dev/null
+ rm -rf "\${rund}"
+
+ # production
+ rund=\$d/ior.\$PBS_JOBID.1
+ mkdir -p \$rund
+ export I_MPI_PIN_PROCESSOR=0
+ mpirun -np 1 mdtest -n 1000 -d \$rund -F -C -T -r -i 10 -N 1 -u > mdtest.`uname -r`.\${d//\//_}.stdout
+ rm -rf "\${rund}"
+
+done
+
+# end timing
+date
+end=\`date +%s\`
+((timing=end-start))
+
+echo time spent: \$timing seconds
+echo metric=\"\$timing\"
+echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
+echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
+EOF
+
+jobid=`qsub $QSUB_ARGS run.pbs`
+if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
+echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"

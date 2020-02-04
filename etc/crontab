@@ -83,6 +83,9 @@
 26 4      * * 0 %USER% t=121_gromacs_openmpi_2node; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 27 4      * * 0 %USER% t=123_qe_2node_gpfs        ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 28 4      * * 0 %USER% t=162_dgx_tf2              ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+### Weekly I/O intensive
+1  22     * * 0 %USER% t=164_dgx_mdtest           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+31 22     * * 0 %USER% t=165_dgx_iozone           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### On-demand tests
 ## 1  5 1 1 * %USER% t=052_linpack_default           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 2  5 1 1 * %USER% t=054_linpack_local             ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi

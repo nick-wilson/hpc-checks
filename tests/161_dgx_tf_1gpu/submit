@@ -8,7 +8,8 @@ failmetric=175.0
 layers=152
 batch=64
 dataset="resnet"
-data="/scratch/projects/ai/datasets/imagenet/$dataset"
+fs="${FS:-/scratch}"
+data="$fs/projects/ai/datasets/imagenet/$dataset"
 i_latest="nscc/local/tensorflow:latest"
 image=${IMAGE:-$i_latest}
 
