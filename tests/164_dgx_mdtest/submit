@@ -37,9 +37,9 @@ cat << EOF > run.pbs
 #!/bin/bash
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
-#PBS -l select=1:ncpus=40:ngpus=8
+#PBS -l select=1:ncpus=1:ngpus=0
 #PBS -l walltime=0:30:00
-#PBS -q dgx
+#PBS -q dgx-dev
 #PBS -j oe
 #PBS -P 90000001
 
