@@ -49,9 +49,11 @@ if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
 failmetric="$failmetric"
 
-module load cuda80/toolkit/8.0.44 intelmpi mkl
+#module load cuda80/toolkit/8.0.44 intelmpi mkl
+#HPL_DIR=/app/benchmarks/linpack-cuda
+module load cuda/10.1 intelmpi mkl
+HPL_DIR=/app/benchmarks/linpack-cuda-10.1
 export KMP_AFFINITY="granularity=fine,compact"
-HPL_DIR=/app/benchmarks/linpack-cuda
 CPU_CORES_PER_GPU=24
 export MKL_NUM_THREADS=\$CPU_CORES_PER_GPU
 export MKL_DYNAMIC=FALSE
