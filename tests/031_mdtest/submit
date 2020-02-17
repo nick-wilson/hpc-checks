@@ -17,7 +17,7 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 # Script settings
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
-datadir="$BASE/data/$test"
+pathdir=":$BASE/data/bin"
 tmp=tmp
 script=run.pbs
 csv="$BASE/results.csv"
@@ -56,7 +56,9 @@ uname -a
 
 if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
 
-$datadir/drop_caches
+PATH="\${PATH}${pathdir}" ; export PATH
+sync
+drop_caches
 memhog 95g > /dev/null
 for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
 numastat -n > numastat-n
