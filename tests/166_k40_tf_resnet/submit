@@ -4,6 +4,8 @@
 BASE=/home/projects/benchmarks/workload
 test=166_k40_tf_resnet
 failmetric=50.0
+checkout=${CHECKOUT:-0}
+keep=${KEEP:-0}
 
 # run on any host
 target=1
@@ -126,7 +128,12 @@ numastat -n
 numastat -m
 cat /sys/kernel/debug/extfrag/extfrag_index
 
-tar zxf $datadir/benchmarks.tgz
+checkout=$checkout
+if [ \$checkout -eq 1 ] ; then
+ git clone -b cnn_tf_v1.10_compatible https://github.com/tensorflow/benchmarks.git
+else
+ tar zxf $datadir/benchmarks.tgz
+fi
 
 module load singularity/latest
 singularity exec \$SINGULARITY_IMAGES/tensorflow/tensorflow.1.11.0-gpu.simg \
@@ -136,7 +143,8 @@ singularity exec \$SINGULARITY_IMAGES/tensorflow/tensorflow.1.11.0-gpu.simg \
 
 grep 'Devices:.*horovod/gpu:0' stdout.\$PBS_JOBID > /dev/null  || { echo job fail ; echo FAIL ; exit 1 ; }
 grep '^total images/sec:' stdout.\$PBS_JOBID > /dev/null  || { echo job fail ; echo FAIL ; exit 1 ; }
-rm -rf benchmarks
+keep=$keep
+if [ \$keep -ne 1 ] ; then rm -rf benchmarks ; fi
 
 failmetric="$failmetric"
 metric=\`grep '^total images/sec:' stdout.\$PBS_JOBID | awk '{print \$NF}'\`

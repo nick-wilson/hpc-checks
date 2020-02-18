@@ -1,5 +1,4 @@
 #!/bin/sh
-git clone https://github.com/tensorflow/benchmarks && \
- git branch cnn_tf_v1.10_compatible && \
+git clone -b cnn_tf_v1.10_compatible https://github.com/tensorflow/benchmarks.git && \
  tar zcf benchmarks.tgz benchmarks && \
  rm -rf benchmarks
