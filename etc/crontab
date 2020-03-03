@@ -54,7 +54,7 @@
 46 3      * * * %USER% t=153_dgx_singularity_check; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 47 3      * * * %USER% t=160_random               ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 48 3      * * * %USER% t=161_dgx_tf_1gpu          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-49 3      * * * %USER% t=163_dgx_tf2_1gpu         ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+49 3      * * * %USER% t=168_dgx_tf2_1gpu         ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### Weekly tests
 2  4      * * 0 %USER% t=055_linpack_cuda         ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 3  4      * * 0 %USER% t=019_arm_reports          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
@@ -82,7 +82,7 @@
 25 4      * * 0 %USER% t=120_imb_openmpi_check    ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 26 4      * * 0 %USER% t=121_gromacs_openmpi_2node; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 27 4      * * 0 %USER% t=123_qe_2node_gpfs        ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
-28 4      * * 0 %USER% t=162_dgx_tf2              ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+28 4      * * 0 %USER% t=167_dgx_tf2              ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 29 4      * * 0 %USER% t=166_k40_tf_resnet        ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ### Weekly I/O intensive
 1  22     * * 0 %USER% t=164_dgx_mdtest           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
@@ -106,3 +106,5 @@
 ## 17 5 1 1 * %USER% t=156_dgx_check_nolustre        ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 18 5 1 1 * %USER% t=157_dgx_tf_nolustre           ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
 ## 19 5 1 1 * %USER% t=158_dgx_tf2_nolustre          ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 19 5 1 1 * %USER% t=162_dgx_tf2                   ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi
+## 20 5 1 1 * %USER% t=163_dgx_tf2_1gpu              ; x="%BASEDIR%/tests/$t/submit" ; if [ -x "$x" ] ; then $x >> /tmp/cron.$t.stdout 2>&1 ; fi

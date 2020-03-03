@@ -2,14 +2,12 @@
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
-test=162_dgx_tf2
-### nvcr.io/nvidia/tensorflow:20.01-tf2-py3
-failmetric=1750.0
-layers=152
-batch=64
+test=168_dgx_tf2_1gpu
+### nvcr.io/nvidia/tensorflow:20.02-tf2-py3
+failmetric=600.0
 dataset="resnet"
 data="/scratch/projects/ai/datasets/imagenet/$dataset"
-i_latest="nvcr.io/nvidia/tensorflow:20.01-tf2-py3"
+i_latest="nvcr.io/nvidia/tensorflow:latest-tf2"
 image=${IMAGE:-$i_latest}
 
 dockerarg="$DOCKERARGV"
@@ -46,9 +44,9 @@ cat << EOF > run.pbs
 #!/bin/bash
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
-#PBS -l select=${target}:ncpus=40:ngpus=8
+#PBS -l select=${target}:ncpus=5:ngpus=1
 #PBS -q dgx
-#PBS -l walltime=0:30:00
+#PBS -l walltime=1:00:00
 #PBS -j oe
 #PBS -P 90000001
 set -e
@@ -60,11 +58,10 @@ image="$image"
 nscc-docker images
 nscc-docker run $dockerarg \$image < stdin > stdout.\$PBS_JOBID 2> stderr.\$PBS_JOBID
 grep 'Created TensorFlow device .*/device:GPU' stderr.\$PBS_JOBID || { echo job fail ; echo FAIL ; exit 1 ; }
-###nvcr.io/nvidia/tensorflow:20.01-tf2-py3
-grep '^Step: 200 Img/sec' stdout.\$PBS_JOBID > /dev/null  || { echo job fail ; echo FAIL ; exit 1 ; }
+grep '^global_step: 200 images_per_sec' stdout.\$PBS_JOBID > /dev/null  || { echo job fail ; echo FAIL ; exit 1 ; }
 failmetric="$failmetric"
-###nvcr.io/nvidia/tensorflow:20.01-tf2-py3
-metric=\`grep '^Step: 190 Img/sec' stdout.\$PBS_JOBID | awk '{print \$NF}'\`
+### nvcr.io/nvidia/tensorflow:20.02-tf2-py3
+metric=\`grep '^global_step: 190 images_per_sec' stdout.\$PBS_JOBID | awk '{print \$NF}'\`
 
 echo metric=\"\$metric\"
 echo check performance
@@ -75,22 +72,18 @@ EOF
 
 cat << EOF > stdin
 dataset="$dataset"
-layers="$layers"
-batch="$batch"
+#layers="$layers"
+#batch="$batch"
 data="$data"
 cd /workspace/nvidia-examples/cnn
-### nvcr.io/nvidia/tensorflow:20.01-tf2-py3
-mpiexec --allow-run-as-root -np 8 python \${dataset}.py \
- --layers \$layers \
- -b \$batch \
+# issue with dataset
+# --data_dir \$data \
+
+### nvcr.io/nvidia/tensorflow:20.02-tf2-py3
+python \${dataset}.py \
  -i 200 \
  -u batch \
- --precision=fp16 \
- --data_dir \$data \
- --num_gpus=1 \
- --resnet_version=v1.5 \
- --use_ctl \
- --use_hvd
+ --precision=fp16
 EOF
 
 jobid=`qsub $QSUB_ARGS run.pbs`
