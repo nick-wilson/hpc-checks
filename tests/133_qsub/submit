@@ -69,4 +69,8 @@ EOF
 
 jobid=`qsub $QSUB_ARGS run.pbs`
 if [ x"$ECHO_JOBID" != x ] ; then echo $jobid ; fi
-echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
+if [ x"$jobid" != x ] ; then
+ echo "$test , $jobid , Q , STIME , UNKNOWN , 0 , 00:00:00 , 0.0 , HOSTNAME , $PWD " >> "$csv"
+else
+ echo "$test , NA , F , "`date +"%a %b %d %H:%M:%S %Y"`" , FAIL , 1 , 00:00:00 , 0.0 , NA , $PWD " >> "$csv"
+fi
