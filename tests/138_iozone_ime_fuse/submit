@@ -98,7 +98,8 @@ echo time spent: \$timing seconds
 echo time spent in iozone: \$timing1 seconds
 echo time spent in ime-sync and ime-release: \$timing2 seconds
 echo threshold for failure: \$failmetric seconds
-echo metric=\"\$timing\"
+metric="\$timing"
+echo metric=\"\$metric\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
 echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF

@@ -102,6 +102,7 @@ end=\`date +%s\`
 
 echo time spent: \$timing seconds
 echo threshold for failure: \$failmetric seconds
+metric="\$timing"
 echo metric=\"\$timing\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
 echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS

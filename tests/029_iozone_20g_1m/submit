@@ -91,7 +91,8 @@ end=\`date +%s\`
 ((timing=end-start))
 
 echo time spent: \$timing seconds
-echo metric=\"\$timing\"
+metric="\$timing"
+echo metric=\"\$metric\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
 echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF

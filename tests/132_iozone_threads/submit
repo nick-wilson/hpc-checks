@@ -96,7 +96,8 @@ done
 date
 end=\`date +%s\`
 ((timing=end-start))
-echo metric=\"\$timing\"
+metric="\$timing"
+echo metric=\"\$metric\"
 
 echo time spent: \$timing seconds
 echo threshold for failure: \$failmetric seconds

@@ -2,8 +2,8 @@
 
 # Test settings
 BASE=/home/projects/benchmarks/workload
-test=131_iozone_1tb
-failmetric="360000"
+test=169_mdtest_data
+failmetric="60"
 
 # run on any host
 target=1
@@ -17,7 +17,7 @@ PATH="${PATH}:/app/pbs/bin:/opt/pbs/bin" ; export PATH
 # Script settings
 d=`date +%Y/%m/%d/%H/%M/%S`
 rundir="$BASE/run/$d/$test"
-bindir="$BASE/data/bin"
+pathdir=":$BASE/data/bin"
 tmp=tmp
 script=run.pbs
 csv="$BASE/results.csv"
@@ -38,61 +38,63 @@ cat << EOF > run.pbs
 #PBS -N $pbsname
 #%@FUJITSU:NSCC:CONTINUOUS_PERFORMANCE_TESTING@%#
 #PBS -l select=${target}:ncpus=24${SELECT_GPU}:mem=96gb
-#PBS -l walltime=24:00:00
+#PBS -l walltime=0:30:00
 #PBS -j oe
 #PBS -P 90000001
 
 set -e
 failmetric="$failmetric"
-PATH="/app/benchmarks/iozone3_471/bin:\$PATH" ; export PATH
+module load intelmpi
+PATH="/app/benchmarks/ior/bin:\$PATH" ; export PATH
 
-if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
-workdir="\$PWD"
 echo == env
 env
 echo == ulimit
 ulimit -a
+echo == uname
+uname -a
 
+if [ -d "\$PBS_O_WORKDIR" ] ; then cd "\$PBS_O_WORKDIR" ; fi
+
+PATH="\${PATH}${pathdir}" ; export PATH
+sync
+drop_caches
+memhog 95g > /dev/null
+for f in meminfo buddyinfo vmstat zoneinfo ; do cat /proc/\$f > proc.\$f ; done
+numastat -n > numastat-n
+numastat -m > numastat-m
+cat /sys/kernel/debug/extfrag/extfrag_index > extfrag_index
 
 # start timing
 date
 start=\`date +%s\`
 
-r=1m
-lustre_dir=/scratch/projects/benchmarks/workload/$test.\$PBS_JOBID
+for d in /data/tmp ; do
 
-runbench(){
- sync
- $bindir/drop_caches
- memhog 95g > /dev/null
- t=\$1
- s=\$2
- i=\$3
- echo Lustre iteration \$i for size \$s with record \$r
- mkdir -p "\$lustre_dir" && \
- cd "\$lustre_dir" && \
- time iozone -c -e -P 0 -t \$t -i 0 -i 1 -s \$s -r \$r > "\$workdir"/iozone.lustre.\${t}t.\$s.\$r.\$PBS_JOBID.\$i
- cd "\$workdir" && rm -rf "\$lustre_dir"
-}
+ # warmup
+ rund=\$d/ior.\$PBS_JOBID.0
+ mkdir -p \$rund
+ export I_MPI_PIN_PROCESSOR=0
+ mpirun -np 1 mdtest -n 10 -d \$rund -F -C -T -r -i 1 -N 1 -u > /dev/null
+ rm -rf "\${rund}"
 
-for s in 1g 10g 100g 1000g ; do
- for t in 1 24 ; do
-  for i in 0 1 2 ; do
-   runbench \$t \$s \$i
-  done
- done
+ # production
+ rund=\$d/ior.\$PBS_JOBID.1
+ mkdir -p \$rund
+ export I_MPI_PIN_PROCESSOR=0
+ mpirun -np 1 mdtest -n 1000 -d \$rund -F -C -T -r -i 10 -N 1 -u > mdtest.`uname -r`.\${d//\//_}.stdout
+ rm -rf "\${rund}"
+
 done
 
 # end timing
 date
 end=\`date +%s\`
 ((timing=end-start))
-metric="\$timing"
-echo metric=\"\$metric\"
 
 echo time spent: \$timing seconds
-echo threshold for failure: \$failmetric seconds
-echo metric: \$metric
+metric="\$timing"
+echo metric=\"\$metric\"
 echo \$metric | awk '{if ( \$1 > '\$failmetric' ) {printf "FAIL\n"}}' | grep FAIL && exit 1
 echo \$metric | awk '{if ( \$1 <= '\$failmetric' ) {printf "PASS\n"}}' | grep PASS
 EOF

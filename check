@@ -13,14 +13,14 @@ echo
 echo === Action
 for jobid in `grep FAIL $csv | awk -F, '{printf "%s ",$2}'` ; do
  if [ x"$jobid" == xNA ] ; then continue ; fi
- d=`grep "$jobid" $csv | awk '{print $NF}'`
- t=`grep "$jobid" $csv | awk '{print $1}'`
+ d=`grep " $jobid " $csv | awk '{print $NF}'`
+ t=`grep " $jobid " $csv | awk '{print $1}'`
  cat $d/${t}*
  echo
- grep "$jobid" $csv
+ grep " $jobid " $csv
  echo Accept?
  read ans
  if [ x"$ans" != x ] ; then
-  sed -i "/$jobid/s/FAIL/$ans/" $csv
+  sed -i "/ $jobid /s/FAIL/$ans/" $csv
  fi
 done
